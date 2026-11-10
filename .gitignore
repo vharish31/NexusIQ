@@ -74,3 +74,10 @@ ehthumbs.db
 logs/
 *.log
 
+# Large datasets (keep manifests, scripts, and structure; ignore JSONL data files)
+*.jsonl
+datasets/raw/**/*.jsonl
+datasets/processed/**/*.jsonl
+datasets/benchmark_suites/**/*.jsonl
+
+
