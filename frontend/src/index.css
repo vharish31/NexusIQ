@@ -1,0 +1,999 @@
+/* ==========================================================================
+   NEXUSAI — Premium Dark AI Intelligence & Trust Design System
+   ========================================================================== */
+
+:root {
+  /* Core Color System */
+  --nexus-bg-primary: #080D1B;
+  --nexus-bg-secondary: #10182B;
+  --nexus-bg-card: #151F35;
+  --nexus-bg-card-hover: #1A2744;
+  --nexus-bg-card-glass: rgba(21, 31, 53, 0.72);
+  
+  /* Borders & Dividers */
+  --nexus-border: rgba(255, 255, 255, 0.08);
+  --nexus-border-subtle: rgba(255, 255, 255, 0.04);
+  --nexus-border-hover: rgba(255, 255, 255, 0.16);
+  --nexus-border-glow-blue: rgba(59, 130, 246, 0.4);
+  --nexus-border-glow-cyan: rgba(34, 211, 238, 0.4);
+  --nexus-border-glow-purple: rgba(167, 139, 250, 0.4);
+
+  /* Typography */
+  --nexus-text-primary: #F8FAFC;
+  --nexus-text-secondary: #94A3B8;
+  --nexus-text-muted: #64748B;
+  --nexus-text-white: #FFFFFF;
+
+  /* Brand Accents */
+  --nexus-blue: #3B82F6;
+  --nexus-blue-dark: #2563EB;
+  --nexus-blue-glow: rgba(59, 130, 246, 0.25);
+  --nexus-cyan: #22D3EE;
+  --nexus-cyan-glow: rgba(34, 211, 238, 0.25);
+
+  --nexus-purple: #A78BFA;
+  --nexus-violet: #8B5CF6;
+  --nexus-violet-dark: #7C3AED;
+  --nexus-purple-glow: rgba(167, 139, 250, 0.25);
+
+  /* Semantic Feedback */
+  --nexus-green: #10B981;
+  --nexus-green-glow: rgba(16, 185, 129, 0.2);
+  --nexus-green-bg: rgba(16, 185, 129, 0.12);
+  --nexus-green-border: rgba(16, 185, 129, 0.3);
+
+  --nexus-amber: #F59E0B;
+  --nexus-amber-glow: rgba(245, 158, 11, 0.2);
+  --nexus-amber-bg: rgba(245, 158, 11, 0.12);
+  --nexus-amber-border: rgba(245, 158, 11, 0.3);
+
+  --nexus-red: #EF4444;
+  --nexus-red-bg: rgba(239, 68, 68, 0.12);
+  --nexus-red-border: rgba(239, 68, 68, 0.3);
+
+  /* Radii & Shadows */
+  --nexus-radius-sm: 8px;
+  --nexus-radius-md: 12px;
+  --nexus-radius-lg: 18px;
+  --nexus-radius-xl: 22px;
+  --nexus-radius-full: 9999px;
+
+  --nexus-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --nexus-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --nexus-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --nexus-shadow-glow-blue: 0 0 35px -5px rgba(59, 130, 246, 0.3);
+  --nexus-shadow-glow-purple: 0 0 35px -5px rgba(139, 92, 246, 0.3);
+}
+
+/* Base Reset & Typography */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--nexus-bg-primary);
+  color: var(--nexus-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  font-size: 0.935rem;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.08) 0%, transparent 45%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  color: var(--nexus-text-white);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+}
+
+a {
+  color: var(--nexus-blue);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--nexus-cyan);
+}
+
+/* ==========================================================================
+   Ambient Backgrounds & Lighting
+   ========================================================================== */
+
+.ambient-glow-mesh {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.45;
+  pointer-events: none;
+  animation: floatOrb 18s ease-in-out infinite alternate;
+}
+
+.ambient-orb-blue {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, rgba(34, 211, 238, 0.1) 70%, transparent 100%);
+  top: -100px;
+  left: 10%;
+}
+
+.ambient-orb-purple {
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(167, 139, 250, 0.1) 70%, transparent 100%);
+  bottom: -100px;
+  right: 10%;
+  animation-duration: 22s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 30px) scale(1.08); }
+  100% { transform: translate(-30px, -40px) scale(0.95); }
+}
+
+/* ==========================================================================
+   Landing Page Visual Styles
+   ========================================================================== */
+
+.landing-container {
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--nexus-bg-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.landing-header {
+  position: relative;
+  z-index: 10;
+  padding: 1.75rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  background: rgba(8, 13, 27, 0.6);
+}
+
+.landing-hero {
+  position: relative;
+  z-index: 10;
+  padding: 3rem 1.5rem 4rem 1.5rem;
+  text-align: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--nexus-radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--nexus-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.hero-headline {
+  font-size: clamp(2.5rem, 5.5vw, 4.2rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #FFFFFF 20%, #E2E8F0 60%, #94A3B8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-headline-gradient {
+  background: linear-gradient(135deg, #60A5FA 0%, #22D3EE 50%, #C084FC 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  color: var(--nexus-text-secondary);
+  max-width: 680px;
+  margin: 0 auto 3.5rem auto;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Two Interactive Agent Cards
+   ========================================================================== */
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 900px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+}
+
+.agent-card {
+  position: relative;
+  border-radius: var(--nexus-radius-xl);
+  padding: 2.75rem 2.25rem;
+  text-align: left;
+  background: var(--nexus-bg-card-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--nexus-border);
+  box-shadow: var(--nexus-shadow);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.agent-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transition: opacity 0.3s ease;
+  opacity: 0.5;
+}
+
+.agent-card-agentbench::before {
+  background: linear-gradient(90deg, transparent, var(--nexus-blue), var(--nexus-cyan), transparent);
+}
+
+.agent-card-meeting::before {
+  background: linear-gradient(90deg, transparent, var(--nexus-violet), var(--nexus-purple), transparent);
+}
+
+.agent-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.agent-card-agentbench:hover {
+  border-color: var(--nexus-border-glow-blue);
+  box-shadow: var(--nexus-shadow-glow-blue), 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.agent-card-meeting:hover {
+  border-color: var(--nexus-border-glow-purple);
+  box-shadow: var(--nexus-shadow-glow-purple), 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.agent-card-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--nexus-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.75rem;
+  position: relative;
+}
+
+.agent-card-agentbench .agent-card-icon-wrap {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(34, 211, 238, 0.15) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--nexus-cyan);
+}
+
+.agent-card-meeting .agent-card-icon-wrap {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(167, 139, 250, 0.15) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--nexus-purple);
+}
+
+.agent-card-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+  color: #FFFFFF;
+}
+
+.agent-card-subtitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.15rem;
+}
+
+.agent-card-agentbench .agent-card-subtitle {
+  color: var(--nexus-cyan);
+}
+
+.agent-card-meeting .agent-card-subtitle {
+  color: var(--nexus-purple);
+}
+
+.agent-card-description {
+  font-size: 1rem;
+  color: var(--nexus-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 2.25rem;
+}
+
+.agent-card-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2.25rem;
+}
+
+.agent-card-features .feature-pill {
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--nexus-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.agent-card-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.95rem 1.4rem;
+  border-radius: var(--nexus-radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.agent-card-agentbench .agent-card-cta {
+  background: linear-gradient(135deg, var(--nexus-blue) 0%, var(--nexus-blue-dark) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+}
+
+.agent-card-agentbench .agent-card-cta:hover {
+  background: linear-gradient(135deg, #60A5FA 0%, var(--nexus-blue) 100%);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.agent-card-meeting .agent-card-cta {
+  background: linear-gradient(135deg, var(--nexus-violet) 0%, var(--nexus-violet-dark) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
+}
+
+.agent-card-meeting .agent-card-cta:hover {
+  background: linear-gradient(135deg, #A78BFA 0%, var(--nexus-violet) 100%);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+}
+
+/* ==========================================================================
+   Workspace Shell Layout
+   ========================================================================== */
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--nexus-bg-primary);
+  position: relative;
+}
+
+.sidebar {
+  width: 270px;
+  min-width: 270px;
+  background: var(--nexus-bg-secondary);
+  border-right: 1px solid var(--nexus-border);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1030;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+  min-width: 80px;
+}
+
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  background-color: var(--nexus-bg-primary);
+}
+
+.top-navbar {
+  height: 70px;
+  background: rgba(16, 24, 43, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--nexus-border);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 2.25rem 3.5rem 2.25rem;
+  background-color: var(--nexus-bg-primary);
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .main-content {
+    padding: 1.25rem;
+  }
+  .top-navbar {
+    padding: 0 1rem;
+  }
+}
+
+/* Back to Agents Button */
+.btn-back-to-agents {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--nexus-radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--nexus-border);
+  color: var(--nexus-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-back-to-agents:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--nexus-text-white);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(-2px);
+}
+
+/* Navigation items in sidebar */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--nexus-radius-md);
+  color: var(--nexus-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.885rem;
+  transition: all 0.18s ease;
+  margin-bottom: 0.35rem;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--nexus-text-white);
+}
+
+.sidebar-link.active {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* Workspace Specific Active Highlights */
+.workspace-agentbench .sidebar-link.active {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(34, 211, 238, 0.08) 100%);
+  border-left: 3px solid var(--nexus-blue);
+  color: var(--nexus-cyan);
+}
+
+.workspace-meeting .sidebar-link.active {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.2) 0%, rgba(167, 139, 250, 0.08) 100%);
+  border-left: 3px solid var(--nexus-violet);
+  color: var(--nexus-purple);
+}
+
+/* ==========================================================================
+   Card System (Dark Mode)
+   ========================================================================== */
+
+.nexus-card {
+  background: var(--nexus-bg-card);
+  border: 1px solid var(--nexus-border);
+  border-radius: var(--nexus-radius-lg);
+  box-shadow: var(--nexus-shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nexus-card.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--nexus-shadow);
+  border-color: var(--nexus-border-hover);
+}
+
+.nexus-card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--nexus-border);
+  background: rgba(21, 31, 53, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nexus-card-body {
+  padding: 1.5rem;
+}
+
+.nexus-card-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--nexus-border);
+  background: rgba(16, 24, 43, 0.4);
+}
+
+/* ==========================================================================
+   Badges & Pills
+   ========================================================================== */
+
+.badge-trust-verified {
+  background-color: var(--nexus-green-bg);
+  color: var(--nexus-green);
+  border: 1px solid var(--nexus-green-border);
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.badge-trust-warning {
+  background-color: var(--nexus-amber-bg);
+  color: var(--nexus-amber);
+  border: 1px solid var(--nexus-amber-border);
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.badge-trust-danger {
+  background-color: var(--nexus-red-bg);
+  color: var(--nexus-red);
+  border: 1px solid var(--nexus-red-border);
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.badge-trust-info {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: var(--nexus-blue);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.badge-trust-purple {
+  background-color: rgba(139, 92, 246, 0.12);
+  color: var(--nexus-purple);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+.badge-trust-neutral {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--nexus-text-secondary);
+  border: 1px solid var(--nexus-border);
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nexus-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+}
+
+/* ==========================================================================
+   Buttons (Enterprise Dark)
+   ========================================================================== */
+
+.btn-nexus-primary {
+  background: linear-gradient(135deg, var(--nexus-blue) 0%, var(--nexus-blue-dark) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: var(--nexus-radius-md);
+  padding: 0.55rem 1.25rem;
+  font-size: 0.885rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-nexus-primary:hover, .btn-nexus-primary:focus {
+  background: linear-gradient(135deg, #60A5FA 0%, var(--nexus-blue) 100%);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+.btn-nexus-purple {
+  background: linear-gradient(135deg, var(--nexus-violet) 0%, var(--nexus-violet-dark) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: var(--nexus-radius-md);
+  padding: 0.55rem 1.25rem;
+  font-size: 0.885rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 10px rgba(139, 92, 246, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-nexus-purple:hover, .btn-nexus-purple:focus {
+  background: linear-gradient(135deg, #A78BFA 0%, var(--nexus-violet) 100%);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.btn-nexus-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--nexus-border);
+  color: var(--nexus-text-primary);
+  font-weight: 600;
+  border-radius: var(--nexus-radius-md);
+  padding: 0.55rem 1.25rem;
+  font-size: 0.885rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-nexus-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   Tables & Data Presentation (Dark Mode)
+   ========================================================================== */
+
+.nexus-table {
+  width: 100%;
+  margin-bottom: 0;
+  color: var(--nexus-text-primary);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.nexus-table th {
+  background: rgba(16, 24, 43, 0.7);
+  color: var(--nexus-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  border-top: none;
+  border-bottom: 1px solid var(--nexus-border);
+  padding: 0.95rem 1.15rem;
+  white-space: nowrap;
+}
+
+.nexus-table td {
+  padding: 1rem 1.15rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.885rem;
+  background: transparent;
+  color: var(--nexus-text-primary);
+}
+
+.nexus-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Bootstrap Table Overrides */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--nexus-text-primary);
+  --bs-table-border-color: var(--nexus-border);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.03);
+  --bs-table-hover-color: var(--nexus-text-primary);
+}
+
+/* ==========================================================================
+   Form Controls (Dark Mode Overrides)
+   ========================================================================== */
+
+.form-control, .form-select {
+  background-color: var(--nexus-bg-secondary) !important;
+  color: var(--nexus-text-primary) !important;
+  border: 1px solid var(--nexus-border) !important;
+  border-radius: var(--nexus-radius-md) !important;
+  padding: 0.6rem 0.9rem !important;
+  font-size: 0.885rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--nexus-blue) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+}
+
+.form-control::placeholder {
+  color: var(--nexus-text-muted) !important;
+}
+
+.input-group-text {
+  background-color: var(--nexus-bg-secondary) !important;
+  border-color: var(--nexus-border) !important;
+  color: var(--nexus-text-secondary) !important;
+}
+
+/* Range input */
+.form-range::-webkit-slider-thumb {
+  background-color: var(--nexus-blue);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* ==========================================================================
+   Modals & Tabs (Dark Mode Overrides)
+   ========================================================================== */
+
+.modal-content {
+  background-color: var(--nexus-bg-card) !important;
+  color: var(--nexus-text-primary) !important;
+  border: 1px solid var(--nexus-border) !important;
+  border-radius: var(--nexus-radius-xl) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--nexus-border) !important;
+  padding: 1.5rem !important;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--nexus-border) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.nav-tabs {
+  border-bottom: 1px solid var(--nexus-border) !important;
+}
+
+.nav-tabs .nav-link {
+  color: var(--nexus-text-secondary) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  padding: 0.65rem 1.25rem !important;
+  font-weight: 600 !important;
+  font-size: 0.885rem !important;
+  background: transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--nexus-text-primary) !important;
+}
+
+.nav-tabs .nav-link.active {
+  color: #FFFFFF !important;
+  border-bottom-color: var(--nexus-blue) !important;
+}
+
+/* Dropdown menu dark mode */
+.dropdown-menu {
+  background-color: var(--nexus-bg-card) !important;
+  border: 1px solid var(--nexus-border) !important;
+  border-radius: var(--nexus-radius-md) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5) !important;
+  padding: 0.5rem !important;
+}
+
+.dropdown-item {
+  color: var(--nexus-text-primary) !important;
+  border-radius: var(--nexus-radius-sm) !important;
+  padding: 0.55rem 0.9rem !important;
+  font-size: 0.85rem !important;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.dropdown-divider {
+  border-top: 1px solid var(--nexus-border) !important;
+}
+
+/* ==========================================================================
+   Trace Waterfall (Dark Mode)
+   ========================================================================== */
+
+.trace-node {
+  position: relative;
+  padding-left: 2.25rem;
+  padding-bottom: 1.75rem;
+}
+
+.trace-node::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 24px;
+  bottom: 0;
+  width: 2px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.trace-node:last-child::before {
+  display: none;
+}
+
+.trace-bullet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--nexus-bg-secondary);
+  border: 2px solid var(--nexus-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 0 0 4px var(--nexus-bg-primary);
+}
+
+/* ==========================================================================
+   Pulsing Indicators
+   ========================================================================== */
+
+.pulse-green {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseGreenAnim 2s infinite;
+}
+
+@keyframes pulseGreenAnim {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pulse-blue {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #3B82F6;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  animation: pulseBlueAnim 2s infinite;
+}
+
+@keyframes pulseBlueAnim {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+/* ==========================================================================
+   Scrollbars & Utilities
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: var(--nexus-bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
