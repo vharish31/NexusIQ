@@ -107,17 +107,17 @@ export const LandingPage = () => {
       {/* Top Brand Bar */}
       <header className="landing-header">
         <div className="d-flex align-items-center gap-3">
-          <div
-            className="d-flex align-items-center justify-content-center rounded-3 text-white shadow-sm"
+          <img
+            src="/icon-192.png"
+            alt="NexusIQ Logo"
+            className="rounded-3 shadow-sm flex-shrink-0"
             style={{
               width: '44px',
               height: '44px',
-              background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
-              border: '1px solid rgba(255,255,255,0.22)'
+              objectFit: 'cover',
+              border: '1px solid rgba(56, 189, 248, 0.35)'
             }}
-          >
-            <Sparkles size={22} />
-          </div>
+          />
           <div>
             <div className="d-flex align-items-center gap-2">
               <span className="fw-bold fs-5 text-white tracking-tight">NEXUSIQ</span>
