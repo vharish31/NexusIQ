@@ -11,16 +11,9 @@ logger = logging.getLogger("nexusiq.services.dataset_loader")
 
 
 def _get_datasets_root() -> Path:
-    """Resolve the NexusIQ/datasets directory regardless of working directory."""
-    candidates = [
-        Path(__file__).resolve().parent.parent.parent.parent / "datasets",
-        Path.cwd() / "datasets",
-        Path.cwd().parent / "datasets",
-    ]
-    for path in candidates:
-        if path.exists() and (path / "manifests" / "datasets.json").exists():
-            return path
-    return candidates[0]
+    """Resolve datasets inside the backend deployment directory."""
+    backend_root = Path(__file__).resolve().parents[2]
+    return backend_root / "datasets"
 
 
 DATASETS_ROOT = _get_datasets_root()

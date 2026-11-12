@@ -1,0 +1,5 @@
+# Ignore large JSONL dataset files while keeping scripts, manifests, README, and folder structure
+*.jsonl
+__pycache__/
+*.py[cod]
+
