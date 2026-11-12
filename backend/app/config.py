@@ -28,12 +28,14 @@ class Settings(BaseSettings):
     port: int = 8000
 
     # CORS settings for React/Vite frontends
-    cors_origins: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ]
+    # CORS settings for React/Vite frontends
+cors_origins: List[str] = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://nexus-iq-nu.vercel.app",
+]
 
     @field_validator("cors_origins", mode="before")
     @classmethod
