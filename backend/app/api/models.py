@@ -130,11 +130,11 @@ async def list_models() -> Dict[str, Any]:
     )
 
     for model in docs:
-        if model["id"] in latest_scores:
-            model["trustScore"] = latest_scores[model["id"]]
-        elif model["id"] == "nexusiq-fact-verifier-v1" and ml_test_acc > 0:
-            model["trustScore"] = ml_test_acc
+        if model["id"] == "nexusiq-fact-verifier-v1" and ml_test_acc > 0:
             model["status"] = "Active"
+            model["trustScore"] = latest_scores.get(model["id"], ml_test_acc)
+        elif model["id"] in latest_scores:
+            model["trustScore"] = latest_scores[model["id"]]
 
     return {
         "success": True,
