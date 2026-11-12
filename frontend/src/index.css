@@ -80,11 +80,22 @@ body {
   line-height: 1.6;
   font-size: 0.935rem;
   overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.08) 0%, transparent 45%);
-  background-attachment: fixed;
+  background-image:
+    radial-gradient(circle at 12% 10%, rgba(59, 130, 246, 0.1) 0%, transparent 42%),
+    radial-gradient(circle at 88% 85%, rgba(139, 92, 246, 0.1) 0%, transparent 42%),
+    linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
   min-height: 100vh;
+}
+
+/* Improved Bootstrap Dark Contrast Overrides */
+.text-muted {
+  color: #8E9EB8 !important;
+}
+
+.text-secondary {
+  color: #B4C2D6 !important;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
@@ -260,11 +271,10 @@ a:hover {
   border-radius: var(--nexus-radius-xl);
   padding: 2.75rem 2.25rem;
   text-align: left;
-  background: var(--nexus-bg-card-glass);
-  backdrop-filter: blur(20px);
+  background: rgba(18, 27, 48, 0.92);
   border: 1px solid var(--nexus-border);
   box-shadow: var(--nexus-shadow);
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -418,15 +428,16 @@ a:hover {
 .app-container {
   display: flex;
   min-height: 100vh;
-  width: 100vw;
-  background-color: var(--nexus-bg-primary);
+  width: 100%;
+  background-color: transparent;
   position: relative;
 }
 
 .sidebar {
-  width: 270px;
-  min-width: 270px;
-  background: var(--nexus-bg-secondary);
+  width: 268px;
+  min-width: 268px;
+  background: rgba(13, 20, 38, 0.92);
+  backdrop-filter: blur(18px);
   border-right: 1px solid var(--nexus-border);
   display: flex;
   flex-direction: column;
@@ -438,8 +449,8 @@ a:hover {
 }
 
 .sidebar.collapsed {
-  width: 80px;
-  min-width: 80px;
+  width: 78px;
+  min-width: 78px;
 }
 
 .main-wrapper {
@@ -448,13 +459,13 @@ a:hover {
   flex-direction: column;
   min-width: 0;
   min-height: 100vh;
-  background-color: var(--nexus-bg-primary);
+  background-color: transparent;
 }
 
 .top-navbar {
-  height: 70px;
-  background: rgba(16, 24, 43, 0.85);
-  backdrop-filter: blur(16px);
+  height: 68px;
+  background: rgba(11, 17, 34, 0.82);
+  backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--nexus-border);
   position: sticky;
   top: 0;
@@ -466,8 +477,11 @@ a:hover {
 
 .main-content {
   flex: 1;
-  padding: 2rem 2.25rem 3.5rem 2.25rem;
-  background-color: var(--nexus-bg-primary);
+  padding: 1.75rem 2.25rem 3.5rem 2.25rem;
+  max-width: 1560px;
+  width: 100%;
+  margin: 0 auto;
+  background-color: transparent;
   position: relative;
 }
 
@@ -553,28 +567,66 @@ a:hover {
    ========================================================================== */
 
 .nexus-card {
-  background: var(--nexus-bg-card);
-  border: 1px solid var(--nexus-border);
+  background: linear-gradient(180deg, rgba(23, 34, 58, 0.95) 0%, rgba(17, 25, 44, 0.98) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: var(--nexus-radius-lg);
-  box-shadow: var(--nexus-shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--nexus-shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
 .nexus-card.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--nexus-shadow);
-  border-color: var(--nexus-border-hover);
+  transform: translateY(-3px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 32px rgba(0, 0, 0, 0.38);
+  border-color: rgba(148, 163, 184, 0.24);
 }
 
 .nexus-card-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--nexus-border);
-  background: rgba(21, 31, 53, 0.5);
+  padding: 1.15rem 1.4rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Telemetry & Dataset Strip */
+.telemetry-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0 auto 2.5rem auto;
+}
+
+.telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.42rem 0.9rem;
+  border-radius: var(--nexus-radius-full);
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: #CBD5E1;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.metric-callout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-callout {
+  padding: 0.85rem 1rem;
+  border-radius: var(--nexus-radius-md);
+  background: rgba(8, 13, 27, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .nexus-card-body {

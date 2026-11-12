@@ -20,13 +20,13 @@ import PageHeader from '../../components/common/PageHeader';
 import StatusBadge from '../../components/common/StatusBadge';
 import TrustScorePill from '../../components/common/TrustScorePill';
 import LoadingState from '../../components/common/LoadingState';
+import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
-import { AGENT_TRACES } from '../../services/mockData';
 import api from '../../services/api';
 
 export const AgentTracePage = () => {
   const [traces, setTraces] = useState([]);
-  const [selectedTraceId, setSelectedTraceId] = useState('TR-8942');
+  const [selectedTraceId, setSelectedTraceId] = useState('');
   const [activeTrace, setActiveTrace] = useState(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -38,9 +38,12 @@ export const AgentTracePage = () => {
       try {
         setLoading(true);
         const res = await api.getAgentTraces();
-        setTraces(res.data);
-        const initial = res.data.find(t => t.id === selectedTraceId) || res.data[0];
-        setActiveTrace(initial);
+        const traceList = res.data || [];
+        setTraces(traceList);
+        if (traceList.length > 0) {
+          setSelectedTraceId(traceList[0].id);
+          setActiveTrace(traceList[0]);
+        }
       } catch (err) {
         setError(err.message || 'Failed to load agent traces.');
       } finally {
@@ -96,7 +99,7 @@ export const AgentTracePage = () => {
         </Form.Select>
       </PageHeader>
 
-      {activeTrace && (
+      {activeTrace ? (
         <>
           {/* Trace Metadata Overview Card */}
           <div className="nexus-card mb-4">
@@ -335,6 +338,12 @@ export const AgentTracePage = () => {
             </Col>
           </Row>
         </>
+      ) : (
+        <EmptyState
+          icon={Activity}
+          title="No Agent Traces Recorded Yet"
+          description="Execute a benchmark run in AgentBench or synthesize a pre-meeting research brief to capture real step-by-step telemetry."
+        />
       )}
     </div>
   );

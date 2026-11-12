@@ -72,21 +72,16 @@ export const DashboardPage = () => {
     fetchData();
   }, []);
 
-  const performanceTrend = [
-    { period: 'Run #890', accuracy: 94.2, trust: 95.1, latency: 420 },
-    { period: 'Run #893', accuracy: 95.5, trust: 96.4, latency: 390 },
-    { period: 'Run #897', accuracy: 96.1, trust: 97.0, latency: 375 },
-    { period: 'Run #900', accuracy: 96.8, trust: 97.4, latency: 345 },
-    { period: 'Run #902', accuracy: 97.9, trust: 98.2, latency: 330 },
-    { period: 'Run #904', accuracy: 98.6, trust: 98.8, latency: 312 }
-  ];
+  const performanceTrend = stats?.performanceTrend || [];
 
-  const meetingSentimentData = [
-    { department: 'Executive', positive: 84, neutral: 12, negative: 4 },
-    { department: 'Engineering', positive: 76, neutral: 20, negative: 4 },
-    { department: 'Product', positive: 68, neutral: 24, negative: 8 },
-    { department: 'Legal', positive: 62, neutral: 32, negative: 6 }
-  ];
+  const meetingSentimentData = meetings.length
+    ? meetings.map((m) => ({
+        department: m.department || 'General',
+        positive: m.sentimentScore || 0,
+        neutral: Math.max(0, 100 - (m.sentimentScore || 0)),
+        negative: 0
+      }))
+    : [];
 
   if (loading) {
     return <LoadingState message="Connecting to NexusAI Dual Intelligence Engine..." />;
@@ -97,9 +92,9 @@ export const DashboardPage = () => {
       {error && <ErrorBanner message={error} onRetry={fetchData} />}
 
       <PageHeader
-        title="AI Intelligence & Trust Platform — Unified Telemetry"
+        title="NexusIQ Platform — Unified Telemetry"
         subtitle="Cross-platform operational command center monitoring autonomous agent evaluation and executive meeting intelligence."
-        badgeText="Dual Engine v2.4"
+        badgeText="Live Engine"
         badgeVariant="primary"
       >
         <Button
@@ -123,10 +118,10 @@ export const DashboardPage = () => {
 
       {/* Global Stat Cards Grid */}
       <Row className="g-3 mb-4">
-        <Col xs={12} sm={6} lg={4} xl={2}>
+        <Col xs={12} sm={6} lg={4}>
           <StatCard
             title="Model Trust Index"
-            value={`${stats?.overallTrustScore}%`}
+            value={`${stats?.overallTrustScore || 0}%`}
             delta={stats?.trustScoreDelta}
             deltaType="positive"
             subtitle="Verified threshold"
@@ -136,10 +131,10 @@ export const DashboardPage = () => {
           />
         </Col>
 
-        <Col xs={12} sm={6} lg={4} xl={2}>
+        <Col xs={12} sm={6} lg={4}>
           <StatCard
             title="Agent Evals"
-            value={stats?.totalAgentEvaluations}
+            value={stats?.totalAgentEvaluations || 0}
             delta={stats?.evaluationsDelta}
             deltaType="positive"
             subtitle="Benchmark runs"
@@ -149,52 +144,52 @@ export const DashboardPage = () => {
           />
         </Col>
 
-        <Col xs={12} sm={6} lg={4} xl={2}>
+        <Col xs={12} sm={6} lg={4}>
           <StatCard
             title="Hallucination Defense"
-            value={`${stats?.hallucinationPreventionRate}%`}
+            value={`${stats?.hallucinationPreventionRate || 0}%`}
             delta={stats?.hallucinationRateDelta}
             deltaType="positive"
-            subtitle="Adversarial bounds"
+            subtitle="Groundedness avg"
             icon={Zap}
             iconColor="text-info"
             iconBg="bg-info bg-opacity-15"
           />
         </Col>
 
-        <Col xs={12} sm={6} lg={4} xl={2}>
+        <Col xs={12} sm={6} lg={4}>
           <StatCard
-            title="Processed Meetings"
-            value={stats?.processedMeetings}
+            title="Meetings & Briefings"
+            value={stats?.processedMeetings || 0}
             delta={stats?.meetingsDelta}
             deltaType="positive"
-            subtitle="Diarized & briefed"
+            subtitle="Firestore persisted"
             icon={Brain}
             iconColor="text-purple"
             iconBg="bg-purple bg-opacity-15"
           />
         </Col>
 
-        <Col xs={12} sm={6} lg={4} xl={2}>
+        <Col xs={12} sm={6} lg={4}>
           <StatCard
             title="Action Items"
-            value={stats?.actionItemsIdentified}
-            delta={`${stats?.actionItemsCompleted} closed`}
+            value={stats?.actionItemsIdentified || 0}
+            delta={`${stats?.actionItemsCompleted || 0} closed`}
             deltaType="neutral"
-            subtitle="Jira synced"
+            subtitle="Tracked tasks"
             icon={CheckCircle2}
             iconColor="text-warning"
             iconBg="bg-warning bg-opacity-15"
           />
         </Col>
 
-        <Col xs={12} sm={6} lg={4} xl={2}>
+        <Col xs={12} sm={6} lg={4}>
           <StatCard
             title="Agent Latency"
-            value={`${stats?.avgAgentLatencyMs}ms`}
+            value={`${stats?.avgAgentLatencyMs || 0}ms`}
             delta={stats?.latencyDelta}
             deltaType="positive"
-            subtitle="p95 SLA target"
+            subtitle="Observed p95"
             icon={Clock}
             iconColor="text-secondary"
             iconBg="bg-secondary bg-opacity-15"
@@ -270,7 +265,7 @@ export const DashboardPage = () => {
                   </span>
                   <span className="badge-trust-verified py-0.5 px-2">
                     <CheckCircle2 size={12} />
-                    Consensus: {stats?.decisionConsensusRate}%
+                    Saved Briefings: {stats?.processedMeetings || 0}
                   </span>
                 </div>
                 <h4 className="fw-bold text-white mb-1">Meeting Intelligence & Briefings</h4>
@@ -326,50 +321,56 @@ export const DashboardPage = () => {
                 <span className="text-muted small">Consecutive evaluation runs over verified benchmarks</span>
               </div>
               <Badge bg="secondary" className="bg-opacity-25 text-light border border-secondary border-opacity-25 font-mono">
-                p95: 312ms
+                p95: {stats?.avgAgentLatencyMs || 0}ms
               </Badge>
             </div>
             <div className="nexus-card-body">
               <div style={{ width: '100%', height: 260 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={performanceTrend} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="trustGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="accGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="period" stroke="#64748B" fontSize={11} tickLine={false} />
-                    <YAxis domain={[90, 100]} stroke="#64748B" fontSize={11} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#151F35', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#FFFFFF' }}
-                    />
-                    <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ color: '#94A3B8' }} />
-                    <Area
-                      type="monotone"
-                      name="Trust Index (%)"
-                      dataKey="trust"
-                      stroke="#10B981"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#trustGradient)"
-                    />
-                    <Area
-                      type="monotone"
-                      name="Factual Accuracy (%)"
-                      dataKey="accuracy"
-                      stroke="#3B82F6"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#accGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {performanceTrend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={performanceTrend} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="trustGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="accGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                      <XAxis dataKey="period" stroke="#64748B" fontSize={11} tickLine={false} />
+                      <YAxis domain={[0, 100]} stroke="#64748B" fontSize={11} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#151F35', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#FFFFFF' }}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ color: '#94A3B8' }} />
+                      <Area
+                        type="monotone"
+                        name="Trust Index (%)"
+                        dataKey="trust"
+                        stroke="#10B981"
+                        strokeWidth={2.5}
+                        fillOpacity={1}
+                        fill="url(#trustGradient)"
+                      />
+                      <Area
+                        type="monotone"
+                        name="Factual Accuracy (%)"
+                        dataKey="accuracy"
+                        stroke="#3B82F6"
+                        strokeWidth={2.5}
+                        fillOpacity={1}
+                        fill="url(#accGradient)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-100 d-flex align-items-center justify-content-center text-muted small">
+                    Run a benchmark in AgentBench to plot live trust and accuracy trajectories.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -384,25 +385,31 @@ export const DashboardPage = () => {
                 <span className="text-muted small">Sentiment tone extracted from executive diarization</span>
               </div>
               <Badge bg="secondary" className="bg-opacity-25 text-light border border-secondary border-opacity-25 font-mono">
-                124 Sessions
+                {stats?.processedMeetings || 0} Sessions
               </Badge>
             </div>
             <div className="nexus-card-body">
               <div style={{ width: '100%', height: 260 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={meetingSentimentData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="department" stroke="#64748B" fontSize={11} tickLine={false} />
-                    <YAxis domain={[0, 100]} stroke="#64748B" fontSize={11} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#151F35', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#FFFFFF' }}
-                    />
-                    <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ color: '#94A3B8' }} />
-                    <Bar name="Positive (%)" dataKey="positive" fill="#10B981" radius={[4, 4, 0, 0]} />
-                    <Bar name="Constructive (%)" dataKey="neutral" fill="#64748B" radius={[4, 4, 0, 0]} />
-                    <Bar name="Concern (%)" dataKey="negative" fill="#F59E0B" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {meetingSentimentData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={meetingSentimentData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                      <XAxis dataKey="department" stroke="#64748B" fontSize={11} tickLine={false} />
+                      <YAxis domain={[0, 100]} stroke="#64748B" fontSize={11} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#151F35', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#FFFFFF' }}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ color: '#94A3B8' }} />
+                      <Bar name="Positive (%)" dataKey="positive" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      <Bar name="Constructive (%)" dataKey="neutral" fill="#64748B" radius={[4, 4, 0, 0]} />
+                      <Bar name="Concern (%)" dataKey="negative" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-100 d-flex align-items-center justify-content-center text-muted small">
+                    Ingest a meeting record to analyze department alignment metrics.
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -40,13 +40,14 @@ import StatusBadge from '../../components/common/StatusBadge';
 import DataTable from '../../components/common/DataTable';
 import LoadingState from '../../components/common/LoadingState';
 import ErrorBanner from '../../components/common/ErrorBanner';
-import { AVAILABLE_MODELS, BENCHMARK_SUITES } from '../../services/mockData';
 import api from '../../services/api';
 
 export const BenchmarkResultsPage = () => {
   const navigate = useNavigate();
 
   const [results, setResults] = useState([]);
+  const [models, setModels] = useState([]);
+  const [suites, setSuites] = useState([]);
   const [radarData, setRadarData] = useState([]);
   const [scatterData, setScatterData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,14 +65,20 @@ export const BenchmarkResultsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.getBenchmarkResults({
-        modelId: selectedModel,
-        suiteId: selectedSuite,
-        status: selectedStatus
-      });
-      setResults(res.data);
-      setRadarData(res.radarData);
-      setScatterData(res.scatterData);
+      const [res, modelRes, suiteRes] = await Promise.all([
+        api.getBenchmarkResults({
+          modelId: selectedModel,
+          suiteId: selectedSuite,
+          status: selectedStatus
+        }),
+        api.getModels(),
+        api.getBenchmarkSuites()
+      ]);
+      setResults(res.data || []);
+      setRadarData(res.radarData || []);
+      setScatterData(res.scatterData || []);
+      setModels(modelRes.data || []);
+      setSuites(suiteRes.data || []);
     } catch (err) {
       setError(err.message || 'Failed to load benchmark results.');
     } finally {
@@ -82,6 +89,16 @@ export const BenchmarkResultsPage = () => {
   useEffect(() => {
     fetchResults();
   }, [selectedModel, selectedSuite, selectedStatus]);
+
+  const topTrustRun = results.length
+    ? [...results].sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0))[0]
+    : null;
+  const topAccuracyRun = results.length
+    ? [...results].sort((a, b) => (b.accuracy || 0) - (a.accuracy || 0))[0]
+    : null;
+  const fastestRun = results.length
+    ? [...results].sort((a, b) => (a.latencyP95 || 0) - (b.latencyP95 || 0))[0]
+    : null;
 
   // Table columns definition
   const columns = [
@@ -206,10 +223,10 @@ export const BenchmarkResultsPage = () => {
                 </span>
                 <Award size={18} className="text-cyan" style={{ color: '#22D3EE' }} />
               </div>
-              <h5 className="fw-bold mb-1 text-white">Nexus-Agent v2.1</h5>
+              <h5 className="fw-bold mb-1 text-white">{topTrustRun ? topTrustRun.modelName : 'No Runs Yet'}</h5>
               <div className="d-flex align-items-center gap-2 small">
-                <span className="badge-trust-verified py-0.5 px-2">98.8% Composite</span>
-                <span className="text-muted">Zero schema hallucinations</span>
+                <span className="badge-trust-verified py-0.5 px-2">{topTrustRun ? `${topTrustRun.trustScore}% Trust` : '—'}</span>
+                <span className="text-muted">{topTrustRun ? topTrustRun.suiteName : 'Run a benchmark to populate'}</span>
               </div>
             </div>
           </div>
@@ -220,14 +237,14 @@ export const BenchmarkResultsPage = () => {
             <div className="nexus-card-body p-3">
               <div className="d-flex align-items-center justify-content-between mb-1">
                 <span className="small text-muted fw-semibold text-uppercase" style={{ fontSize: '0.72rem' }}>
-                  Top Cognitive Reasoning
+                  Top Dataset Accuracy
                 </span>
                 <Award size={18} className="text-warning" />
               </div>
-              <h5 className="fw-bold mb-1 text-white">Claude 3.5 Sonnet</h5>
+              <h5 className="fw-bold mb-1 text-white">{topAccuracyRun ? topAccuracyRun.modelName : 'No Runs Yet'}</h5>
               <div className="d-flex align-items-center gap-2 small">
-                <span className="badge-trust-verified py-0.5 px-2">98.2% Reasoning</span>
-                <span className="text-muted">Superior causal balance</span>
+                <span className="badge-trust-verified py-0.5 px-2">{topAccuracyRun ? `${topAccuracyRun.accuracy}% Accuracy` : '—'}</span>
+                <span className="text-muted">{topAccuracyRun ? `${topAccuracyRun.sampleSize} vectors tested` : 'FEVER & FEVEROUS ready'}</span>
               </div>
             </div>
           </div>
@@ -238,16 +255,16 @@ export const BenchmarkResultsPage = () => {
             <div className="nexus-card-body p-3">
               <div className="d-flex align-items-center justify-content-between mb-1">
                 <span className="small text-muted fw-semibold text-uppercase" style={{ fontSize: '0.72rem' }}>
-                  Throughput & Cost Leader
+                  Fastest Execution
                 </span>
                 <Award size={18} className="text-success" />
               </div>
-              <h5 className="fw-bold mb-1 text-white">Llama 3 70B Instruct</h5>
+              <h5 className="fw-bold mb-1 text-white">{fastestRun ? fastestRun.modelName : 'No Runs Yet'}</h5>
               <div className="d-flex align-items-center gap-2 small">
                 <span className="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 font-mono">
-                  198ms p95
+                  {fastestRun ? `${fastestRun.latencyP95}ms p95` : '—'}
                 </span>
-                <span className="text-muted">$0.0012 / 1k tokens</span>
+                <span className="text-muted">{fastestRun ? `$${Number(fastestRun.costPer1k || 0).toFixed(4)} / 1k` : 'Awaiting evaluation'}</span>
               </div>
             </div>
           </div>
@@ -365,7 +382,7 @@ export const BenchmarkResultsPage = () => {
                 onChange={(e) => setSelectedModel(e.target.value)}
               >
                 <option value="all">All Evaluated Models</option>
-                {AVAILABLE_MODELS.map((m) => (
+                {models.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
@@ -385,7 +402,7 @@ export const BenchmarkResultsPage = () => {
                 onChange={(e) => setSelectedSuite(e.target.value)}
               >
                 <option value="all">All Benchmark Suites</option>
-                {BENCHMARK_SUITES.map((s) => (
+                {suites.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>

@@ -37,8 +37,8 @@ import PageHeader from '../../components/common/PageHeader';
 import StatusBadge from '../../components/common/StatusBadge';
 import TrustScorePill from '../../components/common/TrustScorePill';
 import LoadingState from '../../components/common/LoadingState';
+import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
-import { MEETING_BRIEFING_DETAILS } from '../../services/mockData';
 import api from '../../services/api';
 
 export const BriefingResultsPage = () => {
@@ -71,9 +71,13 @@ export const BriefingResultsPage = () => {
         setLoading(true);
         const res = await api.getMeetingBriefing('MTG-101');
         setBriefing(res.data);
-        setActionItems(res.data.actionItems);
+        setActionItems(res.data?.actionItems || []);
       } catch (err) {
-        setError(err.message || 'Failed to load executive briefing.');
+        if (err.message && err.message.toLowerCase().includes('not found')) {
+          setBriefing(null);
+        } else {
+          setError(err.message || 'Failed to load executive briefing.');
+        }
       } finally {
         setLoading(false);
       }
@@ -109,14 +113,15 @@ export const BriefingResultsPage = () => {
   };
 
   const handleToggleActionStatus = async (id) => {
-    const updated = actionItems.map((item) => {
-      if (item.id === id) {
-        const nextStatus = item.status === 'Completed' ? 'In Progress' : 'Completed';
-        return { ...item, status: nextStatus };
-      }
-      return item;
-    });
-    setActionItems(updated);
+    const currentItem = actionItems.find((item) => item.id === id);
+    if (!currentItem) return;
+    const nextStatus = currentItem.status === 'Completed' ? 'In Progress' : 'Completed';
+    setActionItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: nextStatus } : item))
+    );
+    if (briefing?.id) {
+      api.updateActionItemStatus(briefing.id, id, nextStatus).catch(() => {});
+    }
   };
 
   const handleSyncJira = (taskTitle) => {
@@ -179,6 +184,14 @@ export const BriefingResultsPage = () => {
           Export Briefing
         </Button>
       </PageHeader>
+
+      {!briefing && !error ? (
+        <EmptyState
+          icon={FileText}
+          title="No Executive Briefings Available Yet"
+          description="Generate a pre-meeting research dossier or ingest a meeting record in Meeting Intelligence to view synthesized briefings here."
+        />
+      ) : null}
 
       {briefing && (
         <>

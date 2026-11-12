@@ -1,0 +1,450 @@
+{
+  "model_id": "nexusiq-fact-verifier-v1",
+  "selected_model_key": "logreg_c10",
+  "selected_model_name": "Logistic Regression (C=1.0, L2 Regularized)",
+  "trained_at": "2026-11-12 05:52:13 UTC",
+  "total_pipeline_seconds": 2918.2,
+  "featurization_seconds": 95.34,
+  "feature_dimensions": 80013,
+  "artifact_path": "D:\\NexusIQ\\backend\\app\\ml\\artifacts\\fact_verifier_pipeline.joblib",
+  "artifact_size_mb": 2.58,
+  "e2e_inference_ms_per_claim": 3.453,
+  "classes": [
+    "SUPPORTS",
+    "REFUTES",
+    "NOT ENOUGH INFO"
+  ],
+  "dataset_audit": {
+    "development": {
+      "total_lines": 173388,
+      "valid_records": 173388,
+      "skipped_invalid": 0,
+      "missing_evidence_count": 28511,
+      "label_counts": {
+        "SUPPORTS": 97494,
+        "NOT ENOUGH INFO": 30304,
+        "REFUTES": 45590
+      },
+      "dataset_counts": {
+        "FEVER": 116357,
+        "FEVEROUS": 57031
+      }
+    },
+    "validation": {
+      "total_lines": 21676,
+      "valid_records": 21676,
+      "skipped_invalid": 0,
+      "missing_evidence_count": 3564,
+      "label_counts": {
+        "REFUTES": 5700,
+        "SUPPORTS": 12188,
+        "NOT ENOUGH INFO": 3788
+      },
+      "dataset_counts": {
+        "FEVER": 14546,
+        "FEVEROUS": 7130
+      }
+    },
+    "test": {
+      "total_lines": 21676,
+      "valid_records": 21676,
+      "skipped_invalid": 0,
+      "missing_evidence_count": 3564,
+      "label_counts": {
+        "REFUTES": 5700,
+        "SUPPORTS": 12188,
+        "NOT ENOUGH INFO": 3788
+      },
+      "dataset_counts": {
+        "FEVER": 14546,
+        "FEVEROUS": 7130
+      }
+    }
+  },
+  "candidate_comparison": [
+    {
+      "model_key": "majority_baseline",
+      "name": "Dummy Majority Baseline",
+      "train_time_seconds": 0.08,
+      "val_inference_ms_total": 0.88,
+      "val_latency_ms_per_sample": 0.0,
+      "train_accuracy": 0.5623,
+      "overfit_gap": 0.0,
+      "validation_metrics": {
+        "accuracy": 0.5623,
+        "macro_f1": 0.2399,
+        "weighted_f1": 0.4047,
+        "confusion_matrix_labels": [
+          "SUPPORTS",
+          "REFUTES",
+          "NOT ENOUGH INFO"
+        ],
+        "confusion_matrix": [
+          [
+            12188,
+            0,
+            0
+          ],
+          [
+            5700,
+            0,
+            0
+          ],
+          [
+            3788,
+            0,
+            0
+          ]
+        ],
+        "per_class": {
+          "SUPPORTS": {
+            "precision": 0.5623,
+            "recall": 1.0,
+            "f1": 0.7198,
+            "support": 12188
+          },
+          "REFUTES": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 5700
+          },
+          "NOT ENOUGH INFO": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 3788
+          }
+        }
+      }
+    },
+    {
+      "model_key": "sgd_log_loss",
+      "name": "SGD Classifier (Log-Loss, alpha=1e-5)",
+      "train_time_seconds": 26.41,
+      "val_inference_ms_total": 47.89,
+      "val_latency_ms_per_sample": 0.0022,
+      "train_accuracy": 0.8374,
+      "overfit_gap": 0.0398,
+      "validation_metrics": {
+        "accuracy": 0.7976,
+        "macro_f1": 0.7885,
+        "weighted_f1": 0.787,
+        "confusion_matrix_labels": [
+          "SUPPORTS",
+          "REFUTES",
+          "NOT ENOUGH INFO"
+        ],
+        "confusion_matrix": [
+          [
+            11030,
+            1156,
+            2
+          ],
+          [
+            3005,
+            2695,
+            0
+          ],
+          [
+            143,
+            81,
+            3564
+          ]
+        ],
+        "per_class": {
+          "SUPPORTS": {
+            "precision": 0.778,
+            "recall": 0.905,
+            "f1": 0.8367,
+            "support": 12188
+          },
+          "REFUTES": {
+            "precision": 0.6854,
+            "recall": 0.4728,
+            "f1": 0.5596,
+            "support": 5700
+          },
+          "NOT ENOUGH INFO": {
+            "precision": 0.9994,
+            "recall": 0.9409,
+            "f1": 0.9693,
+            "support": 3788
+          }
+        }
+      }
+    },
+    {
+      "model_key": "logreg_c05",
+      "name": "Logistic Regression (C=0.5, L2 Regularized)",
+      "train_time_seconds": 416.79,
+      "val_inference_ms_total": 53.6,
+      "val_latency_ms_per_sample": 0.0025,
+      "train_accuracy": 0.8509,
+      "overfit_gap": 0.0484,
+      "validation_metrics": {
+        "accuracy": 0.8025,
+        "macro_f1": 0.7903,
+        "weighted_f1": 0.7899,
+        "confusion_matrix_labels": [
+          "SUPPORTS",
+          "REFUTES",
+          "NOT ENOUGH INFO"
+        ],
+        "confusion_matrix": [
+          [
+            11209,
+            975,
+            4
+          ],
+          [
+            3076,
+            2622,
+            2
+          ],
+          [
+            156,
+            67,
+            3565
+          ]
+        ],
+        "per_class": {
+          "SUPPORTS": {
+            "precision": 0.7762,
+            "recall": 0.9197,
+            "f1": 0.8419,
+            "support": 12188
+          },
+          "REFUTES": {
+            "precision": 0.7156,
+            "recall": 0.46,
+            "f1": 0.56,
+            "support": 5700
+          },
+          "NOT ENOUGH INFO": {
+            "precision": 0.9983,
+            "recall": 0.9411,
+            "f1": 0.9689,
+            "support": 3788
+          }
+        }
+      }
+    },
+    {
+      "model_key": "logreg_c10",
+      "name": "Logistic Regression (C=1.0, L2 Regularized)",
+      "train_time_seconds": 573.51,
+      "val_inference_ms_total": 49.32,
+      "val_latency_ms_per_sample": 0.0023,
+      "train_accuracy": 0.8677,
+      "overfit_gap": 0.0645,
+      "validation_metrics": {
+        "accuracy": 0.8032,
+        "macro_f1": 0.7955,
+        "weighted_f1": 0.7936,
+        "confusion_matrix_labels": [
+          "SUPPORTS",
+          "REFUTES",
+          "NOT ENOUGH INFO"
+        ],
+        "confusion_matrix": [
+          [
+            11038,
+            1145,
+            5
+          ],
+          [
+            2890,
+            2806,
+            4
+          ],
+          [
+            153,
+            69,
+            3566
+          ]
+        ],
+        "per_class": {
+          "SUPPORTS": {
+            "precision": 0.7839,
+            "recall": 0.9056,
+            "f1": 0.8404,
+            "support": 12188
+          },
+          "REFUTES": {
+            "precision": 0.698,
+            "recall": 0.4923,
+            "f1": 0.5774,
+            "support": 5700
+          },
+          "NOT ENOUGH INFO": {
+            "precision": 0.9975,
+            "recall": 0.9414,
+            "f1": 0.9686,
+            "support": 3788
+          }
+        }
+      }
+    },
+    {
+      "model_key": "calibrated_linear_svc",
+      "name": "Calibrated LinearSVC (C=0.5)",
+      "train_time_seconds": 1731.26,
+      "val_inference_ms_total": 205.94,
+      "val_latency_ms_per_sample": 0.0095,
+      "train_accuracy": 0.8574,
+      "overfit_gap": 0.0541,
+      "validation_metrics": {
+        "accuracy": 0.8033,
+        "macro_f1": 0.7842,
+        "weighted_f1": 0.7861,
+        "confusion_matrix_labels": [
+          "SUPPORTS",
+          "REFUTES",
+          "NOT ENOUGH INFO"
+        ],
+        "confusion_matrix": [
+          [
+            11460,
+            728,
+            0
+          ],
+          [
+            3311,
+            2388,
+            1
+          ],
+          [
+            159,
+            64,
+            3565
+          ]
+        ],
+        "per_class": {
+          "SUPPORTS": {
+            "precision": 0.7676,
+            "recall": 0.9403,
+            "f1": 0.8452,
+            "support": 12188
+          },
+          "REFUTES": {
+            "precision": 0.7509,
+            "recall": 0.4189,
+            "f1": 0.5378,
+            "support": 5700
+          },
+          "NOT ENOUGH INFO": {
+            "precision": 0.9997,
+            "recall": 0.9411,
+            "f1": 0.9695,
+            "support": 3788
+          }
+        }
+      }
+    }
+  ],
+  "test_evaluation": {
+    "accuracy": 0.8033,
+    "macro_f1": 0.7965,
+    "weighted_f1": 0.7943,
+    "confusion_matrix_labels": [
+      "SUPPORTS",
+      "REFUTES",
+      "NOT ENOUGH INFO"
+    ],
+    "confusion_matrix": [
+      [
+        11007,
+        1180,
+        1
+      ],
+      [
+        2854,
+        2841,
+        5
+      ],
+      [
+        153,
+        70,
+        3565
+      ]
+    ],
+    "per_class": {
+      "SUPPORTS": {
+        "precision": 0.7854,
+        "recall": 0.9031,
+        "f1": 0.8402,
+        "support": 12188
+      },
+      "REFUTES": {
+        "precision": 0.6945,
+        "recall": 0.4984,
+        "f1": 0.5803,
+        "support": 5700
+      },
+      "NOT ENOUGH INFO": {
+        "precision": 0.9983,
+        "recall": 0.9411,
+        "f1": 0.9689,
+        "support": 3788
+      }
+    },
+    "inference_ms_total": 487.95,
+    "confidence_intervals_95": {
+      "accuracy_95ci": [
+        0.7979,
+        0.8087
+      ],
+      "macro_f1_95ci": [
+        0.7911,
+        0.8016
+      ]
+    },
+    "slices": {
+      "by_dataset": {
+        "FEVER": {
+          "samples": 14546,
+          "accuracy": 0.8755,
+          "macro_f1": 0.8429
+        },
+        "FEVEROUS": {
+          "samples": 7130,
+          "accuracy": 0.6561,
+          "macro_f1": 0.4247
+        }
+      },
+      "by_challenge": {
+        "Combining Tables and Text": {
+          "samples": 992,
+          "accuracy": 0.7772,
+          "macro_f1": 0.393
+        },
+        "Entity Disambiguation": {
+          "samples": 136,
+          "accuracy": 0.5882,
+          "macro_f1": 0.3961
+        },
+        "Multi-hop Reasoning": {
+          "samples": 1178,
+          "accuracy": 0.7538,
+          "macro_f1": 0.3918
+        },
+        "Numerical Reasoning": {
+          "samples": 743,
+          "accuracy": 0.5693,
+          "macro_f1": 0.3785
+        },
+        "Other": {
+          "samples": 3993,
+          "accuracy": 0.6193,
+          "macro_f1": 0.4147
+        },
+        "Search terms not in claim": {
+          "samples": 88,
+          "accuracy": 0.4886,
+          "macro_f1": 0.3229
+        }
+      }
+    }
+  }
+}

@@ -1,14 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Form, InputGroup, ListGroup, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { Search, FlaskConical, BarChart3, Activity, Brain, FileText, ArrowRight } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { BENCHMARK_SUITES, AGENT_TRACES, MEETINGS_DATA, RESEARCH_DOSSIERS } from '../../services/mockData';
+import api from '../../services/api';
 
 export const GlobalSearchModal = () => {
   const { isSearchOpen, setIsSearchOpen } = useWorkspace();
   const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({
+    suites: [],
+    traces: [],
+    dossiers: [],
+    meetings: []
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isSearchOpen || !query.trim()) {
+      setSearchResults({ suites: [], traces: [], dossiers: [], meetings: [] });
+      return;
+    }
+    const timer = setTimeout(() => {
+      api.globalSearch(query)
+        .then((res) => {
+          if (res?.data) {
+            setSearchResults(res.data);
+          }
+        })
+        .catch(() => {});
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [query, isSearchOpen]);
 
   const handleClose = () => {
     setIsSearchOpen(false);
@@ -20,21 +43,10 @@ export const GlobalSearchModal = () => {
     handleClose();
   };
 
-  const filteredSuites = BENCHMARK_SUITES.filter(s =>
-    s.name.toLowerCase().includes(query.toLowerCase()) || s.category.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const filteredTraces = AGENT_TRACES.filter(t =>
-    t.name.toLowerCase().includes(query.toLowerCase()) || t.model.toLowerCase().includes(query.toLowerCase()) || t.id.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const filteredDossiers = RESEARCH_DOSSIERS.filter(d =>
-    d.subject.toLowerCase().includes(query.toLowerCase()) || d.meetingPurpose.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const filteredMeetings = MEETINGS_DATA.filter(m =>
-    m.title.toLowerCase().includes(query.toLowerCase()) || m.department.toLowerCase().includes(query.toLowerCase())
-  );
+  const filteredSuites = searchResults.suites || [];
+  const filteredTraces = searchResults.traces || [];
+  const filteredDossiers = searchResults.dossiers || [];
+  const filteredMeetings = searchResults.meetings || [];
 
   const totalResults = query.trim() ? filteredSuites.length + filteredTraces.length + filteredDossiers.length + filteredMeetings.length : 0;
 

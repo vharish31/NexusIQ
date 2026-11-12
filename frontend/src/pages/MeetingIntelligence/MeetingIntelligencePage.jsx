@@ -35,7 +35,6 @@ import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { RESEARCH_DOSSIERS } from '../../services/mockData';
 import api from '../../services/api';
 
 export const MeetingIntelligencePage = () => {
@@ -45,17 +44,17 @@ export const MeetingIntelligencePage = () => {
   const [activeTab, setActiveTab] = useState('research');
 
   // Pre-meeting Research State
-  const [subject, setSubject] = useState('Stripe');
+  const [subject, setSubject] = useState('Google DeepMind');
   const [subjectType, setSubjectType] = useState('Company');
-  const [meetingDate, setMeetingDate] = useState('2026-11-14');
+  const [meetingDate, setMeetingDate] = useState(new Date().toISOString().substring(0, 10));
   const [meetingPurpose, setMeetingPurpose] = useState('Strategic Enterprise Partnership');
   const [researchWindow, setResearchWindow] = useState(30);
 
   const [isResearching, setIsResearching] = useState(false);
   const [researchProgress, setResearchProgress] = useState(0);
   const [researchStatusMsg, setResearchStatusMsg] = useState('');
-  const [activeDossier, setActiveDossier] = useState(RESEARCH_DOSSIERS[0]);
-  const [pastDossiers, setPastDossiers] = useState(RESEARCH_DOSSIERS);
+  const [activeDossier, setActiveDossier] = useState(null);
+  const [pastDossiers, setPastDossiers] = useState([]);
 
   // Audio Ingestion & Meetings Library State
   const [meetings, setMeetings] = useState([]);
@@ -77,10 +76,11 @@ export const MeetingIntelligencePage = () => {
           api.getMeetings(),
           api.getResearchDossiers()
         ]);
-        setMeetings(mtgRes.data);
-        setPastDossiers(dossierRes.data);
-        if (dossierRes.data.length > 0) {
-          setActiveDossier(dossierRes.data[0]);
+        setMeetings(mtgRes.data || []);
+        const dossiers = dossierRes.data || [];
+        setPastDossiers(dossiers);
+        if (dossiers.length > 0) {
+          setActiveDossier(dossiers[0]);
         }
       } catch (err) {
         setError(err.message || 'Failed to initialize meeting intelligence.');
@@ -96,47 +96,37 @@ export const MeetingIntelligencePage = () => {
     if (!subject.trim()) return;
 
     setIsResearching(true);
-    setResearchProgress(15);
-    setResearchStatusMsg('Querying global news archives & SEC regulatory disclosures...');
+    setError(null);
+    setResearchProgress(30);
+    setResearchStatusMsg(`Querying Tavily intelligence & Trust Engine for ${subject}...`);
 
-    setTimeout(() => {
-      setResearchProgress(50);
-      setResearchStatusMsg(`Extracting verified announcements & executive updates for ${subject}...`);
-    }, 450);
-
-    setTimeout(() => {
-      setResearchProgress(80);
-      setResearchStatusMsg('Synthesizing high-impact meeting questions and strategic opportunities...');
-    }, 950);
-
-    setTimeout(async () => {
-      try {
-        const response = await api.conductPreMeetingResearch({
-          subject: subject.trim(),
-          subjectType,
-          meetingDate,
-          meetingPurpose,
-          researchWindowDays: Number(researchWindow)
-        });
-        setResearchProgress(100);
-        setActiveDossier(response.data);
-        setPastDossiers(prev => {
-          if (!prev.some(d => d.id === response.data.id)) {
-            return [response.data, ...prev];
-          }
-          return prev;
-        });
-        setIsResearching(false);
-      } catch (err) {
-        setIsResearching(false);
-        setError('Research synthesis failed: ' + err.message);
-      }
-    }, 1450);
+    try {
+      const response = await api.conductPreMeetingResearch({
+        subject: subject.trim(),
+        subjectType,
+        meetingDate,
+        meetingPurpose,
+        researchWindowDays: Number(researchWindow)
+      });
+      setResearchProgress(100);
+      setActiveDossier(response.data);
+      setPastDossiers(prev => {
+        if (!prev.some(d => d.id === response.data.id)) {
+          return [response.data, ...prev];
+        }
+        return prev;
+      });
+    } catch (err) {
+      setError('Research synthesis failed: ' + err.message);
+    } finally {
+      setIsResearching(false);
+    }
   };
 
   const handleCopyDossier = () => {
     if (!activeDossier) return;
-    const briefText = `NEXUSAI PRE-MEETING EXECUTIVE BRIEFING\n\nSUBJECT: ${activeDossier.subject} (${activeDossier.subjectType})\nPURPOSE: ${activeDossier.meetingPurpose}\nDATE: ${activeDossier.meetingDate}\nTRUST VERIFICATION: ${activeDossier.trustVerificationScore}%\n\nEXECUTIVE SUMMARY:\n${activeDossier.executiveSummary}\n\nSUGGESTED QUESTIONS:\n${activeDossier.suggestedQuestions.map((q, i) => `${i+1}. [${q.category}] ${q.question}`).join('\n')}`;
+    const questions = activeDossier.suggestedQuestions || [];
+    const briefText = `NEXUSIQ PRE-MEETING EXECUTIVE BRIEFING\n\nSUBJECT: ${activeDossier.subject} (${activeDossier.subjectType})\nPURPOSE: ${activeDossier.meetingPurpose}\nDATE: ${activeDossier.meetingDate}\nTRUST VERIFICATION: ${activeDossier.trustVerificationScore}%\n\nEXECUTIVE SUMMARY:\n${activeDossier.executiveSummary}\n\nSUGGESTED QUESTIONS:\n${questions.map((q, i) => `${i+1}. [${q.category}] ${q.question}`).join('\n')}`;
     navigator.clipboard.writeText(briefText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -212,14 +202,14 @@ export const MeetingIntelligencePage = () => {
                         Company or Executive Name
                       </Form.Label>
                       <Form.Control
-                        placeholder="e.g. Stripe, Anthropic, NVIDIA, Datadog"
+                        placeholder="e.g. Google DeepMind, Anthropic, Stripe, NVIDIA"
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
                         required
                         disabled={isResearching}
                       />
                       <div className="d-flex flex-wrap gap-1.5 mt-2">
-                        {['Stripe', 'Anthropic', 'NVIDIA', 'Datadog'].map((preset) => (
+                        {['Google DeepMind', 'Anthropic', 'Stripe', 'NVIDIA'].map((preset) => (
                           <button
                             key={preset}
                             type="button"
@@ -410,13 +400,13 @@ export const MeetingIntelligencePage = () => {
                         <h6 className="fw-bold mb-0 text-white">Recent Developments & Official Announcements</h6>
                       </div>
                       <Badge bg="secondary" className="bg-opacity-25 text-light border border-secondary border-opacity-25 font-mono">
-                        {activeDossier.recentNews.length} Verified Sources
+                        {(activeDossier.recentNews || []).length} Verified Sources
                       </Badge>
                     </div>
 
                     <div className="nexus-card-body p-3">
                       <div className="d-flex flex-column gap-3">
-                        {activeDossier.recentNews.map((news) => (
+                        {(activeDossier.recentNews || []).map((news) => (
                           <div key={news.id} className="p-3 rounded-3 border border-secondary border-opacity-15 bg-secondary bg-opacity-10 hover-lift">
                             <div className="d-flex align-items-center justify-content-between mb-1.5 flex-wrap gap-2">
                               <span className="badge-trust-verified py-0.5 px-2" style={{ fontSize: '0.70rem' }}>
@@ -465,7 +455,7 @@ export const MeetingIntelligencePage = () => {
                         </div>
                         <div className="nexus-card-body p-3">
                           <div className="d-flex flex-column gap-2.5">
-                            {activeDossier.leadershipChanges.map((lead, idx) => (
+                            {(activeDossier.leadershipChanges || []).length > 0 ? (activeDossier.leadershipChanges || []).map((lead, idx) => (
                               <div key={idx} className="p-2.5 rounded-2 bg-secondary bg-opacity-10 border border-secondary border-opacity-15 small">
                                 <div className="d-flex justify-content-between align-items-center mb-1">
                                   <strong className="text-white">{lead.executive}</strong>
@@ -480,7 +470,9 @@ export const MeetingIntelligencePage = () => {
                                   {lead.notes}
                                 </div>
                               </div>
-                            ))}
+                            )) : (
+                              <div className="text-muted small py-2">No verified leadership changes flagged in retrieved sources.</div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -497,7 +489,7 @@ export const MeetingIntelligencePage = () => {
                         </div>
                         <div className="nexus-card-body p-3">
                           <div className="d-flex flex-column gap-2.5">
-                            {activeDossier.businessOpportunities.map((opp, idx) => (
+                            {(activeDossier.businessOpportunities || []).map((opp, idx) => (
                               <div key={idx} className="p-2.5 rounded-2 bg-secondary bg-opacity-10 border border-secondary border-opacity-15 small">
                                 <div className="d-flex justify-content-between align-items-center mb-1">
                                   <strong className="text-white">{opp.title}</strong>
@@ -524,13 +516,13 @@ export const MeetingIntelligencePage = () => {
                         <h6 className="fw-bold mb-0 text-white">Suggested Strategic Meeting Questions</h6>
                       </div>
                       <Badge bg="secondary" className="bg-opacity-25 text-light border border-secondary border-opacity-25 font-mono">
-                        {activeDossier.suggestedQuestions.length} Questions
+                        {(activeDossier.suggestedQuestions || []).length} Questions
                       </Badge>
                     </div>
 
                     <div className="nexus-card-body p-3">
                       <div className="d-flex flex-column gap-2.5">
-                        {activeDossier.suggestedQuestions.map((q, idx) => (
+                        {(activeDossier.suggestedQuestions || []).map((q, idx) => (
                           <div key={idx} className="p-3 rounded-3 bg-secondary bg-opacity-10 border border-secondary border-opacity-15">
                             <div className="d-flex align-items-center justify-content-between mb-1">
                               <span className="badge bg-warning bg-opacity-15 text-warning font-mono" style={{ fontSize: '0.68rem' }}>
@@ -662,6 +654,12 @@ export const MeetingIntelligencePage = () => {
           {/* Meetings Content View */}
           {meetingsLoading ? (
             <LoadingState message="Fetching diarized meeting records..." />
+          ) : meetings.length === 0 ? (
+            <EmptyState
+              icon={Mic}
+              title="No Meeting Records Ingested Yet"
+              description="Upload a meeting file or create a meeting record to view briefings and track action items."
+            />
           ) : (
             <Row className="g-3">
               {meetings.map((meeting) => (

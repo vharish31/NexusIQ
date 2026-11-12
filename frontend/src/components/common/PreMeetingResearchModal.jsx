@@ -29,40 +29,28 @@ export const PreMeetingResearchModal = ({ onResearchComplete }) => {
     if (!subject.trim()) return;
 
     setIsSearching(true);
-    setSearchProgress(20);
-    setSearchStatus('Connecting to enterprise web intelligence & filing databases...');
+    setSearchProgress(30);
+    setSearchStatus(`Searching Tavily web intelligence & verifying sources for ${subject}...`);
 
-    setTimeout(() => {
-      setSearchProgress(55);
-      setSearchStatus(`Extracting news & official announcements for ${subject} (past ${researchWindow} days)...`);
-    }, 450);
-
-    setTimeout(() => {
-      setSearchProgress(85);
-      setSearchStatus('Analyzing verified leadership changes and formulating strategic meeting questions...');
-    }, 950);
-
-    setTimeout(async () => {
-      try {
-        const response = await api.conductPreMeetingResearch({
-          subject: subject.trim(),
-          subjectType,
-          meetingDate,
-          meetingPurpose,
-          researchWindowDays: Number(researchWindow)
-        });
-        setSearchProgress(100);
-        setSearchStatus('Research dossier compiled and verified!');
-        setIsSearching(false);
-        if (onResearchComplete) {
-          onResearchComplete(response.data);
-        }
-        handleClose();
-      } catch (err) {
-        setIsSearching(false);
-        setSearchStatus('Error generating research dossier: ' + err.message);
+    try {
+      const response = await api.conductPreMeetingResearch({
+        subject: subject.trim(),
+        subjectType,
+        meetingDate,
+        meetingPurpose,
+        researchWindowDays: Number(researchWindow)
+      });
+      setSearchProgress(100);
+      setSearchStatus('Research dossier compiled and verified!');
+      if (onResearchComplete) {
+        onResearchComplete(response.data);
       }
-    }, 1450);
+      setIsSearching(false);
+      handleClose();
+    } catch (err) {
+      setIsSearching(false);
+      setSearchStatus('Error generating research dossier: ' + err.message);
+    }
   };
 
   return (

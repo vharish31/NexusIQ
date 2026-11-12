@@ -149,9 +149,16 @@ def create_application() -> FastAPI:
                 "firebase_health": "/api/health/firebase",
                 "bifrost_health": "/api/health/bifrost",
                 "tavily_health": "/api/health/tavily",
+                "stats": "/api/stats",
+                "search": "/api/search",
+                "models": "/api/models",
+                "datasets": "/api/datasets",
                 "agents": "/api/agents",
                 "benchmarks": "/api/benchmarks",
+                "benchmark_suites": "/api/benchmarks/suites",
+                "traces": "/api/traces",
                 "briefings": "/api/briefings",
+                "meetings": "/api/meetings",
             },
         }
 

@@ -60,27 +60,24 @@ export const UploadMeetingModal = ({ onUploadComplete }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsUploading(true);
-    setUploadProgress(20);
+    setUploadProgress(40);
 
-    setTimeout(() => setUploadProgress(50), 300);
-    setTimeout(() => setUploadProgress(85), 700);
-
-    setTimeout(async () => {
-      try {
-        const response = await api.uploadMeetingAudio({
-          title: meetingTitle || 'Executive Strategic Debrief',
-          department: department
-        });
-        setUploadProgress(100);
-        setUploadSuccess(response.data);
-        setIsUploading(false);
-        if (onUploadComplete) {
-          onUploadComplete(response.data);
-        }
-      } catch (err) {
-        setIsUploading(false);
+    try {
+      const response = await api.uploadMeetingAudio({
+        title: meetingTitle || 'Executive Strategic Debrief',
+        department: department,
+        fileName: selectedFile ? selectedFile.name : null
+      });
+      setUploadProgress(100);
+      setUploadSuccess(response.data);
+      if (onUploadComplete) {
+        onUploadComplete(response.data);
       }
-    }, 1200);
+    } catch (err) {
+      // handled cleanly
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (

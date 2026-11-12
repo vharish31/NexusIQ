@@ -1,41 +1,47 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Dropdown, Badge, Button } from 'react-bootstrap';
 import {
   Menu,
   Search,
-  Plus,
-  Bell,
-  CheckCircle2,
   FlaskConical,
   Brain,
   ShieldCheck,
   ChevronDown,
-  Layers,
   Sparkles,
   ArrowLeft,
-  User,
-  Sliders,
   LogOut,
-  UploadCloud,
+  LayoutDashboard,
   Play
 } from 'lucide-react';
-import { useWorkspace, WORKSPACES } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/WorkspaceContext';
+import api from '../../services/api';
 
 export const TopNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const {
-    activeWorkspace,
-    setActiveWorkspace,
-    workspaceMeta,
     setIsSearchOpen,
     setIsRunBenchmarkOpen,
-    setIsRegisterAgentOpen,
-    setIsUploadMeetingOpen,
     setIsPreMeetingResearchOpen,
     setMobileSidebarOpen
   } = useWorkspace();
+
+  const [liveTrustScore, setLiveTrustScore] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    api.getPlatformStats()
+      .then((res) => {
+        if (mounted && res?.data) {
+          setLiveTrustScore(res.data.overallTrustScore);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const isAgentBench = location.pathname.startsWith('/agent-bench') ||
                        location.pathname.startsWith('/benchmark-results') ||
@@ -78,11 +84,17 @@ export const TopNavbar = () => {
               <span className="fw-bold small text-white">AgentBench</span>
               <span className="text-muted small d-none d-lg-inline">— AI Agent Evaluation</span>
             </div>
-          ) : (
+          ) : isMeeting ? (
             <div className="d-flex align-items-center gap-1.5 px-3 py-1 rounded-pill bg-purple bg-opacity-15 border border-purple border-opacity-30" style={{ background: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)' }}>
               <Brain size={14} className="text-purple" style={{ color: '#A78BFA' }} />
               <span className="fw-bold small text-white">Meeting Intelligence</span>
               <span className="text-muted small d-none d-lg-inline">— Pre-Meeting Research</span>
+            </div>
+          ) : (
+            <div className="d-flex align-items-center gap-1.5 px-3 py-1 rounded-pill bg-secondary bg-opacity-15 border border-secondary border-opacity-30">
+              <LayoutDashboard size={14} className="text-info" />
+              <span className="fw-bold small text-white">NexusIQ Overview</span>
+              <span className="text-muted small d-none d-lg-inline">— Unified Telemetry</span>
             </div>
           )}
         </div>
@@ -118,7 +130,11 @@ export const TopNavbar = () => {
         {/* Global Trust Score Pill */}
         <div className="d-none d-sm-flex badge-trust-verified py-1 px-2.5">
           <ShieldCheck size={14} />
-          <span>Trust Score: 98.4%</span>
+          <span>
+            {liveTrustScore !== null && liveTrustScore > 0
+              ? `Trust Score: ${liveTrustScore}%`
+              : 'Trust Engine Live'}
+          </span>
         </div>
 
         {/* Workspace-Specific Primary Action */}
@@ -159,23 +175,27 @@ export const TopNavbar = () => {
               style={{
                 width: '30px',
                 height: '30px',
-                fontSize: '0.75rem',
+                fontSize: '0.72rem',
                 background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)'
               }}
             >
-              AM
+              NQ
             </div>
             <ChevronDown size={13} className="text-muted d-none d-sm-inline" />
           </Dropdown.Toggle>
 
           <Dropdown.Menu className="shadow-lg border p-1" style={{ minWidth: '220px' }}>
             <div className="px-3 py-2 border-bottom border-secondary border-opacity-25">
-              <div className="fw-bold text-white small">Dr. Alex Mercer</div>
-              <div className="text-muted" style={{ fontSize: '0.72rem' }}>Chief AI & Trust Architect</div>
+              <div className="fw-bold text-white small">NexusIQ Workspace</div>
+              <div className="text-muted" style={{ fontSize: '0.72rem' }}>AI Benchmarking & Intelligence</div>
             </div>
             <Dropdown.Item onClick={() => navigate('/')} className="small py-2 px-3 d-flex align-items-center gap-2">
               <Sparkles size={14} className="text-primary" />
               <span>Landing Page & Agents</span>
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => navigate('/dashboard')} className="small py-2 px-3 d-flex align-items-center gap-2">
+              <LayoutDashboard size={14} className="text-info" />
+              <span>Overview Dashboard</span>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => navigate('/agent-bench')} className="small py-2 px-3 d-flex align-items-center gap-2">
               <FlaskConical size={14} className="text-cyan" />

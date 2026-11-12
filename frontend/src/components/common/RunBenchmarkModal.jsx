@@ -1,20 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, ProgressBar, Alert, Badge } from 'react-bootstrap';
 import { Play, CheckCircle2, ShieldCheck, Terminal, Cpu, FlaskConical } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { AVAILABLE_MODELS, BENCHMARK_SUITES } from '../../services/mockData';
 import api from '../../services/api';
 
 export const RunBenchmarkModal = ({ onRunComplete }) => {
   const { isRunBenchmarkOpen, setIsRunBenchmarkOpen } = useWorkspace();
-  const [selectedModel, setSelectedModel] = useState('nexus-agent-v2.1');
-  const [selectedSuite, setSelectedSuite] = useState('suite-tool-use');
-  const [sampleSize, setSampleSize] = useState(100);
+  const [models, setModels] = useState([]);
+  const [suites, setSuites] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('gemini/gemini-1.5-flash');
+  const [selectedSuite, setSelectedSuite] = useState('fever-validation');
+  const [sampleSize, setSampleSize] = useState(50);
   const [temperature, setTemperature] = useState(0.2);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusLog, setStatusLog] = useState([]);
   const [runSuccess, setRunSuccess] = useState(null);
+
+  useEffect(() => {
+    if (!isRunBenchmarkOpen) return;
+    Promise.all([api.getModels(), api.getBenchmarkSuites()])
+      .then(([mRes, sRes]) => {
+        const mList = mRes.data || [];
+        const sList = sRes.data || [];
+        setModels(mList);
+        setSuites(sList);
+        if (mList.length > 0 && !mList.some((m) => m.id === selectedModel)) {
+          setSelectedModel(mList[0].id);
+        }
+        if (sList.length > 0 && !sList.some((s) => s.id === selectedSuite)) {
+          setSelectedSuite(sList[0].id);
+        }
+      })
+      .catch(() => {});
+  }, [isRunBenchmarkOpen]);
 
   const handleClose = () => {
     if (!isRunning) {
@@ -27,39 +46,34 @@ export const RunBenchmarkModal = ({ onRunComplete }) => {
 
   const handleLaunch = async () => {
     setIsRunning(true);
-    setProgress(15);
-    setStatusLog(['[00:00] Initializing test harness & sandboxed model endpoint...']);
+    setProgress(30);
+    setStatusLog([
+      `[Harness] Dispatching ${sampleSize} dataset vectors from ${selectedSuite}...`,
+      `[Model] Evaluating ${selectedModel} via NexusIQ Trust Engine & Bifrost Gateway...`,
+    ]);
     setRunSuccess(null);
 
-    setTimeout(() => {
-      setProgress(40);
-      setStatusLog(prev => [...prev, '[00:01] Injecting test prompts with ground-truth schema constraints...']);
-    }, 400);
-
-    setTimeout(() => {
-      setProgress(75);
-      setStatusLog(prev => [...prev, '[00:02] Running verification nodes: Hallucination filter & tool syntax check...']);
-    }, 800);
-
-    setTimeout(async () => {
-      try {
-        const response = await api.runBenchmark({
-          modelId: selectedModel,
-          suiteId: selectedSuite,
-          sampleSize: Number(sampleSize)
-        });
-        setProgress(100);
-        setStatusLog(prev => [...prev, `[00:03] Evaluation Complete: Trust Score ${response.data.trustScore}% | Accuracy: ${response.data.accuracy}%`]);
-        setRunSuccess(response.data);
-        setIsRunning(false);
-        if (onRunComplete) {
-          onRunComplete(response.data);
-        }
-      } catch (err) {
-        setIsRunning(false);
-        setStatusLog(prev => [...prev, `[ERROR] Failed to finalize benchmark: ${err.message}`]);
+    try {
+      const response = await api.runBenchmark({
+        modelId: selectedModel,
+        suiteId: selectedSuite,
+        sampleSize: Number(sampleSize),
+        temperature: Number(temperature),
+      });
+      setProgress(100);
+      setStatusLog((prev) => [
+        ...prev,
+        `[Complete] Trust Score: ${response.data.trustScore}% | Accuracy: ${response.data.accuracy}% | Mode: ${response.data.evaluationMode}`,
+      ]);
+      setRunSuccess(response.data);
+      if (onRunComplete) {
+        onRunComplete(response.data);
       }
-    }, 1300);
+    } catch (err) {
+      setStatusLog((prev) => [...prev, `[ERROR] Failed to finalize benchmark: ${err.message}`]);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -88,7 +102,7 @@ export const RunBenchmarkModal = ({ onRunComplete }) => {
                     onChange={(e) => setSelectedModel(e.target.value)}
                     disabled={isRunning}
                   >
-                    {AVAILABLE_MODELS.map(m => (
+                    {models.map(m => (
                       <option key={m.id} value={m.id}>
                         {m.name} ({m.provider})
                       </option>
@@ -105,7 +119,7 @@ export const RunBenchmarkModal = ({ onRunComplete }) => {
                     onChange={(e) => setSelectedSuite(e.target.value)}
                     disabled={isRunning}
                   >
-                    {BENCHMARK_SUITES.map(s => (
+                    {suites.map(s => (
                       <option key={s.id} value={s.id}>
                         {s.name} ({s.category})
                       </option>

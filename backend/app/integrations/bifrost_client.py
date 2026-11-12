@@ -28,6 +28,10 @@ class BifrostAPIError(BifrostError):
         self.payload = payload
 
 
+_BIFROST_HEALTH_CACHE: Dict[str, Any] = {}
+_BIFROST_HEALTH_TTL = 15.0
+
+
 class BifrostClient:
     """
     Independent client for Bifrost AI Gateway.
@@ -83,21 +87,29 @@ class BifrostClient:
 
         return headers
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self, force_refresh: bool = False) -> Dict[str, Any]:
         """
         Pings Bifrost Gateway to verify availability and measure latency.
-        Does not throw an exception on network failure; returns status report.
+        Caches result briefly so offline localhost probes do not stall UI requests.
         """
+        now = time.time()
+        cached = _BIFROST_HEALTH_CACHE.get(self.base_url)
+        if not force_refresh and cached is not None:
+            cached_at, cached_report = cached
+            if (now - cached_at) < _BIFROST_HEALTH_TTL:
+                return dict(cached_report)
+
         health_url = f"{self.base_url}/health"
         start_time = time.perf_counter()
 
         try:
-            async with httpx.AsyncClient(timeout=2.0) as client:
+            timeout = 0.5 if ("localhost" in self.base_url or "127.0.0.1" in self.base_url) else 1.5
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.get(health_url, headers=self._get_headers())
                 latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
                 if response.status_code in (200, 204):
-                    return {
+                    report = {
                         "service": "bifrost_ai_gateway",
                         "status": "online",
                         "available": True,
@@ -106,7 +118,7 @@ class BifrostClient:
                         "details": "Gateway is reachable and healthy.",
                     }
                 else:
-                    return {
+                    report = {
                         "service": "bifrost_ai_gateway",
                         "status": "degraded",
                         "available": False,
@@ -115,7 +127,7 @@ class BifrostClient:
                         "details": f"Gateway returned status {response.status_code}: {response.text[:200]}",
                     }
         except httpx.ConnectError:
-            return {
+            report = {
                 "service": "bifrost_ai_gateway",
                 "status": "offline",
                 "available": False,
@@ -124,7 +136,7 @@ class BifrostClient:
                 "details": f"Could not connect to Bifrost Gateway at {self.base_url}. Ensure the service is running.",
             }
         except httpx.TimeoutException:
-            return {
+            report = {
                 "service": "bifrost_ai_gateway",
                 "status": "timeout",
                 "available": False,
@@ -133,7 +145,7 @@ class BifrostClient:
                 "details": f"Connection timed out when reaching Bifrost Gateway at {self.base_url}.",
             }
         except Exception as exc:
-            return {
+            report = {
                 "service": "bifrost_ai_gateway",
                 "status": "error",
                 "available": False,
@@ -141,6 +153,9 @@ class BifrostClient:
                 "latency_ms": None,
                 "details": f"Unexpected error while checking Bifrost Gateway: {str(exc)}",
             }
+
+        _BIFROST_HEALTH_CACHE[self.base_url] = (now, report)
+        return report
 
     async def chat_completion(
         self,

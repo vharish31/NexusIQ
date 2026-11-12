@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,28 +10,43 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Layers,
-  Sparkles,
   ArrowLeft,
-  RefreshCw,
-  Search,
-  ExternalLink,
-  Plus
+  Search
 } from 'lucide-react';
 import { useWorkspace, WORKSPACES } from '../../context/WorkspaceContext';
+import api from '../../services/api';
 
 export const Sidebar = () => {
   const {
-    activeWorkspace,
     setActiveWorkspace,
     sidebarCollapsed,
     setSidebarCollapsed,
     mobileSidebarOpen,
-    setMobileSidebarOpen,
-    setIsRegisterAgentOpen
+    setMobileSidebarOpen
   } = useWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [footerStats, setFooterStats] = useState({
+    trustScore: null,
+    firestoreOk: false
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.allSettled([api.getPlatformStats(), api.getFirebaseHealth()]).then(
+      ([statsRes, fbRes]) => {
+        if (!mounted) return;
+        setFooterStats({
+          trustScore: statsRes.status === 'fulfilled' ? statsRes.value?.data?.overallTrustScore : null,
+          firestoreOk: fbRes.status === 'fulfilled' && Boolean(fbRes.value?.connected)
+        });
+      }
+    );
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Detect active workspace based on current pathname
   const isAgentBench = location.pathname.startsWith('/agent-bench') ||
@@ -40,6 +55,8 @@ export const Sidebar = () => {
 
   const isMeeting = location.pathname.startsWith('/meeting-intelligence') ||
                     location.pathname.startsWith('/briefing-results');
+
+  const isDashboard = location.pathname.startsWith('/dashboard');
 
   const closeMobile = () => {
     if (mobileSidebarOpen) {
@@ -87,11 +104,11 @@ export const Sidebar = () => {
             {!sidebarCollapsed && (
               <div className="text-truncate">
                 <div className="fw-bold text-white fs-6 d-flex align-items-center gap-1.5">
-                  <span>{isAgentBench ? 'AgentBench' : 'Meeting Intel'}</span>
+                  <span>{isAgentBench ? 'AgentBench' : isMeeting ? 'Meeting Intel' : 'NexusIQ'}</span>
                   <span className="pulse-green"></span>
                 </div>
                 <div className="text-muted small text-truncate" style={{ fontSize: '0.68rem' }}>
-                  {isAgentBench ? 'AI Agent Evaluation' : 'Research & Briefings'}
+                  {isAgentBench ? 'AI Agent Evaluation' : isMeeting ? 'Research & Briefings' : 'Unified Telemetry'}
                 </div>
               </div>
             )}
@@ -136,8 +153,21 @@ export const Sidebar = () => {
 
       {/* Navigation Links */}
       <div className="p-3 flex-grow-1 overflow-y-auto">
-        {/* AgentBench Dedicated Navigation */}
-        {isAgentBench && (
+        {/* Global Overview Link */}
+        <div className="mb-3 pb-2 border-bottom border-secondary border-opacity-10">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            onClick={closeMobile}
+            title="Unified Overview Dashboard"
+          >
+            <LayoutDashboard size={18} />
+            {!sidebarCollapsed && <span>Overview Dashboard</span>}
+          </NavLink>
+        </div>
+
+        {/* AgentBench Dedicated Navigation (shown on AgentBench or Overview) */}
+        {(isAgentBench || isDashboard) && (
           <div>
             {!sidebarCollapsed && (
               <div className="d-flex align-items-center justify-content-between px-2 mb-2">
@@ -201,8 +231,8 @@ export const Sidebar = () => {
           </div>
         )}
 
-        {/* Meeting Intelligence Dedicated Navigation */}
-        {isMeeting && (
+        {/* Meeting Intelligence Dedicated Navigation (shown on Meeting or Overview) */}
+        {(isMeeting || isDashboard) && (
           <div>
             {!sidebarCollapsed && (
               <div className="d-flex align-items-center justify-content-between px-2 mb-2">
@@ -264,20 +294,22 @@ export const Sidebar = () => {
             <div className="d-flex align-items-center justify-content-between mb-1.5">
               <span className="badge-trust-verified py-0.5 px-2" style={{ fontSize: '0.72rem' }}>
                 <ShieldCheck size={12} />
-                Trust Verified
+                Trust Engine
               </span>
               <span className="text-white font-mono small fw-bold">
-                98.4%
+                {footerStats.trustScore ? `${footerStats.trustScore}%` : 'Live'}
               </span>
             </div>
             <div className="text-muted small d-flex align-items-center justify-content-between" style={{ fontSize: '0.74rem' }}>
-              <span>Verification Node</span>
-              <span className="text-success fw-medium">Operational</span>
+              <span>Firestore DB</span>
+              <span className={footerStats.firestoreOk ? 'text-success fw-medium' : 'text-warning fw-medium'}>
+                {footerStats.firestoreOk ? 'Connected' : 'Checking'}
+              </span>
             </div>
           </div>
         ) : (
           <div className="d-flex justify-content-center">
-            <ShieldCheck size={18} className="text-success" title="Trust Verified 98.4%" />
+            <ShieldCheck size={18} className="text-success" title="NexusIQ Trust Engine" />
           </div>
         )}
       </div>

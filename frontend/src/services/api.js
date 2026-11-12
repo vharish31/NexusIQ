@@ -1,25 +1,13 @@
 import axios from 'axios';
-import {
-  PLATFORM_STATS,
-  AVAILABLE_MODELS,
-  BENCHMARK_SUITES,
-  BENCHMARK_RESULTS,
-  AGENT_TRACES,
-  MEETINGS_DATA,
-  MEETING_BRIEFING_DETAILS,
-  RADAR_COMPARISON_DATA,
-  ACCURACY_LATENCY_DATA,
-  RESEARCH_DOSSIERS
-} from './mockData';
 
-// Configure Axios client
+// Configure Axios client pointing to FastAPI backend (/api via Vite proxy or VITE_API_BASE_URL)
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
-  timeout: 15000,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
-    'X-Client-Platform': 'NexusAI-Frontend'
-  }
+    'X-Client-Platform': 'NexusIQ-Frontend',
+  },
 });
 
 // Request interceptor to attach bearer token if configured
@@ -34,381 +22,201 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for unified enterprise error handling
+// Response interceptor for unified FastAPI error extraction
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    console.warn('[NexusAI API] Request intercepted with error, falling back to verified demo simulation', error.message);
-    return Promise.reject(error);
+    const backendError =
+      error?.response?.data?.error?.message ||
+      error?.response?.data?.detail ||
+      error?.message ||
+      'Backend API request failed.';
+    return Promise.reject(new Error(backendError));
   }
 );
 
-// Simulated network delay helper for realistic UX loading states
-const simulateDelay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
+// Lightweight client-side GET cache & in-flight request deduplication (invalidated on writes)
+const _getCache = new Map();
+const _inflightGets = new Map();
+const CLIENT_CACHE_TTL_MS = 15000;
+
+function cachedGet(url, options = {}) {
+  const key = options.params ? `${url}?${JSON.stringify(options.params)}` : url;
+  const cached = _getCache.get(key);
+  if (cached && Date.now() - cached.ts < CLIENT_CACHE_TTL_MS) {
+    return Promise.resolve(cached.data);
+  }
+  if (_inflightGets.has(key)) {
+    return _inflightGets.get(key);
+  }
+  const req = apiClient
+    .get(url, options)
+    .then((data) => {
+      _getCache.set(key, { ts: Date.now(), data });
+      _inflightGets.delete(key);
+      return data;
+    })
+    .catch((err) => {
+      _inflightGets.delete(key);
+      throw err;
+    });
+  _inflightGets.set(key, req);
+  return req;
+}
+
+export function invalidateApiCache() {
+  _getCache.clear();
+}
 
 /**
- * NexusAI Service Layer
- * Fully encapsulates all HTTP and simulated benchmark & meeting telemetry endpoints
+ * NexusIQ Service Layer
+ * Connects all frontend workspaces directly to the FastAPI + Firestore + Bifrost + Tavily backend.
  */
 export const api = {
   /**
-   * Global Dashboard Stats & Health Telemetry
+   * Health & Platform Telemetry
    */
+  async getHealth() {
+    return cachedGet('/health');
+  },
+
+  async getFirebaseHealth() {
+    return cachedGet('/health/firebase');
+  },
+
   async getPlatformStats() {
-    await simulateDelay(350);
-    return {
-      success: true,
-      data: PLATFORM_STATS,
-      isSimulated: true
-    };
+    return cachedGet('/stats');
+  },
+
+  async globalSearch(query) {
+    return apiClient.get('/search', { params: { q: query || '' } });
+  },
+
+  /**
+   * Datasets (FEVER & FEVEROUS)
+   */
+  async getDatasets() {
+    return cachedGet('/datasets');
+  },
+
+  async syncDatasets() {
+    invalidateApiCache();
+    return apiClient.post('/datasets/sync');
   },
 
   /**
    * Workspace 1: Models & Agent Benchmarking
    */
   async getModels() {
-    await simulateDelay(300);
-    return {
-      success: true,
-      data: AVAILABLE_MODELS
-    };
+    return cachedGet('/models');
   },
 
   async registerAgentModel(modelData) {
-    await simulateDelay(600);
-    const newModel = {
-      id: modelData.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-      name: modelData.name,
-      provider: modelData.provider || 'Custom Sovereign Endpoint',
-      type: modelData.type || 'Enterprise Agentic',
-      trustScore: +(95 + Math.random() * 4).toFixed(1),
-      status: 'Registered',
-      color: '#3B82F6',
-      endpoint: modelData.endpoint || 'https://api.internal/v1/chat/completions'
-    };
-    AVAILABLE_MODELS.unshift(newModel);
-    return {
-      success: true,
-      data: newModel,
-      message: `Agent model "${newModel.name}" successfully registered into NexusAI test harness.`
-    };
+    const res = await apiClient.post('/models', modelData);
+    invalidateApiCache();
+    return res;
   },
 
   async getBenchmarkSuites() {
-    await simulateDelay(350);
-    return {
-      success: true,
-      data: BENCHMARK_SUITES
-    };
+    return cachedGet('/benchmarks/suites');
   },
 
   async getBenchmarkResults(filters = {}) {
-    await simulateDelay(400);
-    let results = [...BENCHMARK_RESULTS];
-    
-    if (filters.modelId && filters.modelId !== 'all') {
-      results = results.filter((r) => r.modelId === filters.modelId);
-    }
-    if (filters.suiteId && filters.suiteId !== 'all') {
-      results = results.filter((r) => r.suiteId === filters.suiteId);
-    }
-    if (filters.status && filters.status !== 'all') {
-      results = results.filter((r) => r.status.toLowerCase() === filters.status.toLowerCase());
-    }
-    if (filters.query) {
-      const q = filters.query.toLowerCase();
-      results = results.filter(
-        (r) =>
-          r.modelName.toLowerCase().includes(q) ||
-          r.suiteName.toLowerCase().includes(q) ||
-          r.id.toLowerCase().includes(q)
-      );
-    }
-
-    return {
-      success: true,
-      data: results,
-      total: results.length,
-      radarData: RADAR_COMPARISON_DATA,
-      scatterData: ACCURACY_LATENCY_DATA
-    };
+    const params = {};
+    if (filters.modelId && filters.modelId !== 'all') params.modelId = filters.modelId;
+    if (filters.suiteId && filters.suiteId !== 'all') params.suiteId = filters.suiteId;
+    if (filters.status && filters.status !== 'all') params.status = filters.status;
+    if (filters.query) params.query = filters.query;
+    return cachedGet('/benchmarks', { params });
   },
 
   async getBenchmarkResultById(id) {
-    await simulateDelay(300);
-    const result = BENCHMARK_RESULTS.find((r) => r.id === id);
-    if (!result) {
-      throw new Error(`Benchmark result #${id} not found.`);
-    }
-    return {
-      success: true,
-      data: result
-    };
+    return cachedGet(`/benchmarks/${encodeURIComponent(id)}`);
   },
 
   async runBenchmark(payload) {
-    await simulateDelay(1200);
-    const newRun = {
-      id: `RUN-2026-${Math.floor(910 + Math.random() * 80)}`,
-      modelId: payload.modelId || 'nexus-agent-v2.1',
-      modelName: AVAILABLE_MODELS.find(m => m.id === payload.modelId)?.name || 'Nexus-Agent v2.1',
-      suiteId: payload.suiteId || 'suite-tool-use',
-      suiteName: BENCHMARK_SUITES.find(s => s.id === payload.suiteId)?.name || 'Tool Calling & Multi-API Orchestration',
-      status: 'Verified',
-      trustScore: +(97 + Math.random() * 2.5).toFixed(1),
-      accuracy: +(96 + Math.random() * 3.5).toFixed(1),
-      faithfulness: +(97.5 + Math.random() * 2).toFixed(1),
-      latencyP95: Math.floor(260 + Math.random() * 180),
-      costPer1k: +(0.003 + Math.random() * 0.003).toFixed(4),
-      safetyPassRate: 100.0,
-      sampleSize: payload.sampleSize || 100,
-      runTimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
-      testedBy: 'Interactive Web Session Operator',
-      summary: 'Automated test suite completed successfully with full constraint adherence.'
-    };
-
-    BENCHMARK_RESULTS.unshift(newRun);
-
-    return {
-      success: true,
-      data: newRun,
-      message: 'Benchmark execution completed and verified by NexusAI Trust Node.'
-    };
+    const res = await apiClient.post('/benchmarks/run', {
+      modelId: payload.modelId,
+      suiteId: payload.suiteId,
+      sampleSize: Number(payload.sampleSize) || 50,
+      temperature: payload.temperature !== undefined ? Number(payload.temperature) : 0.2,
+    });
+    invalidateApiCache();
+    return res;
   },
 
   /**
    * Workspace 1: Agent Trace Telemetry
    */
   async getAgentTraces() {
-    await simulateDelay(350);
-    return {
-      success: true,
-      data: AGENT_TRACES
-    };
+    return cachedGet('/traces');
   },
 
   async getAgentTraceById(id) {
-    await simulateDelay(300);
-    const trace = AGENT_TRACES.find((t) => t.id === id);
-    if (!trace) {
-      throw new Error(`Agent trace #${id} could not be retrieved.`);
-    }
-    return {
-      success: true,
-      data: trace
-    };
+    return cachedGet(`/traces/${encodeURIComponent(id)}`);
   },
 
   /**
    * Workspace 2: Pre-Meeting Research Intelligence
    */
-  async conductPreMeetingResearch({ subject, subjectType = 'Company', meetingDate, meetingPurpose, researchWindowDays = 30 }) {
-    await simulateDelay(1400);
-
-    // Check if we have an existing curated dossier for the subject
-    const normalized = (subject || '').trim().toLowerCase();
-    const existing = RESEARCH_DOSSIERS.find(d => d.subject.toLowerCase() === normalized);
-
-    if (existing) {
-      return {
-        success: true,
-        data: {
-          ...existing,
-          meetingDate: meetingDate || existing.meetingDate,
-          meetingPurpose: meetingPurpose || existing.meetingPurpose,
-          researchWindowDays: Number(researchWindowDays)
-        }
-      };
-    }
-
-    // Otherwise, generate high-fidelity dynamic research dossier
-    const generatedDossier = {
-      id: `DOSSIER-${Math.floor(1000 + Math.random() * 9000)}`,
-      subject: subject || 'Target Enterprise',
-      subjectType: subjectType || 'Company',
-      meetingPurpose: meetingPurpose || 'Executive Strategic Alignment',
-      meetingDate: meetingDate || new Date().toISOString().substring(0, 10),
+  async conductPreMeetingResearch({
+    subject,
+    subjectType = 'Company',
+    meetingDate,
+    meetingPurpose,
+    researchWindowDays = 30,
+  }) {
+    const res = await apiClient.post('/briefings/research', {
+      subject,
+      subjectType,
+      meetingDate,
+      meetingPurpose,
       researchWindowDays: Number(researchWindowDays) || 30,
-      generatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
-      trustVerificationScore: +(98.0 + Math.random() * 1.8).toFixed(1),
-      executiveSummary: `${subject} has undergone strategic shifts over the past ${researchWindowDays} days. Key operational focal points include expanding AI automation workflows, tightening cloud unit economics, and aligning procurement guardrails with emerging regulatory standards.`,
-      recentNews: [
-        {
-          id: `NEWS-${Date.now()}-1`,
-          headline: `${subject} Expands AI Automation Architecture for Enterprise Customers`,
-          source: 'PR Newswire / Financial Tech Digest',
-          url: `https://example.com/news/${encodeURIComponent(subject.toLowerCase())}-expansion-2026`,
-          publishedDate: '2026-10-28',
-          verificationStatus: 'Verified Official',
-          summary: `Announced unified API integrations and autonomous agent capabilities with strict compliance audit logs.`
-        },
-        {
-          id: `NEWS-${Date.now()}-2`,
-          headline: `${subject} Closes Strategic Ecosystem Partnership to Scale Cloud Telemetry`,
-          source: 'TechCrunch Enterprise',
-          url: `https://techcrunch.com/2026/10/${encodeURIComponent(subject.toLowerCase())}-strategic-partnership`,
-          publishedDate: '2026-10-15',
-          verificationStatus: 'Cross-Referenced',
-          summary: `Accelerates enterprise onboarding through pre-built connectors and verified trust validation benchmarks.`
-        }
-      ],
-      productLaunches: [
-        {
-          name: `${subject} Enterprise Core v4.0`,
-          releaseDate: '2026-10-05',
-          impact: 'High',
-          description: `Enhanced low-latency data pipelines and end-to-end auditability for mission-critical client workloads.`
-        }
-      ],
-      leadershipChanges: [
-        {
-          executive: 'Sarah Lindqvist',
-          role: 'Chief Revenue & Strategic Partnerships Officer',
-          status: 'Verified Official',
-          source: 'SEC Filings / Corporate PR',
-          date: '2026-09-22',
-          notes: 'Leading commercial expansion across North American and European enterprise sectors.'
-        }
-      ],
-      businessOpportunities: [
-        {
-          title: `NexusAI Guardrail Verification for ${subject}`,
-          priority: 'Immediate Revenue Opportunity',
-          description: `Integrate independent hallucination defense and tool telemetry into their standard enterprise customer proposals.`
-        },
-        {
-          title: 'Executive Pre-Meeting Briefing Automation',
-          priority: 'High Strategic Fit',
-          description: `Equip their sales and partnership teams with automated research briefings prior to C-level discussions.`
-        }
-      ],
-      suggestedQuestions: [
-        {
-          category: 'Strategic Probing',
-          question: `In light of ${subject}'s focus over the last ${researchWindowDays} days, how are your teams measuring agent hallucination and cost per query across production workloads?`
-        },
-        {
-          category: 'Operational Scalability',
-          question: `What specific latency and data sovereignty benchmarks are required before approving third-party autonomous AI integrations?`
-        },
-        {
-          category: 'Icebreaker / Alignment',
-          question: `Congratulations on the recent milestones announced last month — what is the primary success metric for your team in the upcoming quarter?`
-        }
-      ]
-    };
-
-    RESEARCH_DOSSIERS.unshift(generatedDossier);
-
-    return {
-      success: true,
-      data: generatedDossier
-    };
+    });
+    invalidateApiCache();
+    return res;
   },
 
   async getResearchDossiers() {
-    await simulateDelay(300);
-    return {
-      success: true,
-      data: RESEARCH_DOSSIERS
-    };
+    return cachedGet('/briefings');
   },
 
   /**
-   * Workspace 2: Meeting Audio & Diarization
+   * Workspace 2: Meetings & Action Items
    */
   async getMeetings(filters = {}) {
-    await simulateDelay(400);
-    let meetings = [...MEETINGS_DATA];
-
+    const params = {};
     if (filters.department && filters.department !== 'all') {
-      meetings = meetings.filter((m) => m.department.toLowerCase() === filters.department.toLowerCase());
+      params.department = filters.department;
     }
     if (filters.query) {
-      const q = filters.query.toLowerCase();
-      meetings = meetings.filter(
-        (m) =>
-          m.title.toLowerCase().includes(q) ||
-          m.id.toLowerCase().includes(q) ||
-          m.participants.some((p) => p.name.toLowerCase().includes(q))
-      );
+      params.query = filters.query;
     }
-
-    return {
-      success: true,
-      data: meetings,
-      total: meetings.length
-    };
+    return cachedGet('/meetings', { params });
   },
 
   async getMeetingById(id) {
-    await simulateDelay(300);
-    const meeting = MEETINGS_DATA.find((m) => m.id === id);
-    if (!meeting) {
-      throw new Error(`Meeting with ID ${id} not found.`);
-    }
-    return {
-      success: true,
-      data: meeting
-    };
+    return cachedGet(`/meetings/${encodeURIComponent(id)}`);
   },
 
   async getMeetingBriefing(id = 'MTG-101') {
-    await simulateDelay(450);
-    const briefing = MEETING_BRIEFING_DETAILS[id] || MEETING_BRIEFING_DETAILS['MTG-101'];
-    return {
-      success: true,
-      data: briefing
-    };
+    return cachedGet(`/meetings/${encodeURIComponent(id)}/briefing`);
   },
 
   async uploadMeetingAudio(meetingData) {
-    await simulateDelay(1500);
-    const newMeeting = {
-      id: `MTG-${Math.floor(105 + Math.random() * 50)}`,
-      title: meetingData.title || 'Untitled Strategic Sync',
-      date: new Date().toISOString().substring(0, 10),
-      time: '16:00 - 16:35 EST',
-      duration: '35m',
-      department: meetingData.department || 'Executive',
-      sentiment: 'Positive',
-      sentimentScore: 82,
-      status: 'Briefing Ready',
-      trustScore: 98.9,
-      participants: [
-        { name: 'Sarah Chen', role: 'CTO', avatar: 'SC', color: '#3B82F6' },
-        { name: 'David Miller', role: 'CFO', avatar: 'DM', color: '#10B981' }
-      ],
-      summaryExcerpt: 'Successfully transcribed and generated executive briefing with diarization and action items.',
-      actionItemsCount: 3,
-      keyDecisionsCount: 2,
-      audioDurationSeconds: 2100,
-      hasTranscript: true,
-      hasAudio: true,
-      topics: ['Q4 Roadmap', 'Security Audit', 'Resource Reallocation']
-    };
-
-    MEETINGS_DATA.unshift(newMeeting);
-
-    return {
-      success: true,
-      data: newMeeting,
-      message: 'Meeting audio ingested, diarized, and executive briefing generated.'
-    };
+    const res = await apiClient.post('/meetings', meetingData);
+    invalidateApiCache();
+    return res;
   },
 
   async updateActionItemStatus(meetingId, actionId, newStatus) {
-    await simulateDelay(250);
-    const briefing = MEETING_BRIEFING_DETAILS[meetingId] || MEETING_BRIEFING_DETAILS['MTG-101'];
-    const item = briefing.actionItems.find((a) => a.id === actionId);
-    if (item) {
-      item.status = newStatus;
-    }
-    return {
-      success: true,
-      data: item
-    };
-  }
+    const res = await apiClient.patch(
+      `/meetings/${encodeURIComponent(meetingId)}/action-items/${encodeURIComponent(actionId)}`,
+      { status: newStatus }
+    );
+    invalidateApiCache();
+    return res;
+  },
 };
 
 export default api;

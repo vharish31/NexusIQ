@@ -9,6 +9,12 @@ from app.integrations.tavily_client import get_tavily_client
 from app.api.agents import router as agents_router
 from app.api.benchmarks import router as benchmarks_router
 from app.api.briefings import router as briefings_router
+from app.api.datasets import router as datasets_router
+from app.api.meetings import router as meetings_router
+from app.api.ml import router as ml_router
+from app.api.models import router as models_router
+from app.api.stats import router as stats_router
+from app.api.traces import router as traces_router
 
 api_router = APIRouter(prefix="/api")
 
@@ -16,6 +22,12 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(agents_router)
 api_router.include_router(benchmarks_router)
 api_router.include_router(briefings_router)
+api_router.include_router(datasets_router)
+api_router.include_router(meetings_router)
+api_router.include_router(ml_router)
+api_router.include_router(models_router)
+api_router.include_router(stats_router)
+api_router.include_router(traces_router)
 
 
 @api_router.get(

@@ -2,8 +2,9 @@ import itertools
 import json
 import logging
 import os
+import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import firebase_admin
 from firebase_admin import credentials, firestore
 from app.config import get_settings
@@ -12,6 +13,8 @@ logger = logging.getLogger("nexusiq.integrations.firebase")
 
 _firebase_app: Optional[firebase_admin.App] = None
 _firestore_client: Optional[Any] = None
+_health_cache: Optional[Tuple[float, Dict[str, Any]]] = None
+_HEALTH_CACHE_TTL = 30.0
 
 # Default candidate filenames to search for service account JSON
 CREDENTIAL_CANDIDATES: List[str] = [
@@ -171,11 +174,18 @@ def get_collection(collection_name: str) -> Any:
     return get_firestore_client().collection(collection_name)
 
 
-def check_firebase_health() -> Dict[str, Any]:
+def check_firebase_health(force_refresh: bool = False) -> Dict[str, Any]:
     """
     Verifies Firebase connectivity and configuration health.
-    Returns a status dictionary for health check endpoints.
+    Caches successful status briefly to prevent redundant network roundtrips.
     """
+    global _health_cache
+    now = time.time()
+    if not force_refresh and _health_cache is not None:
+        cached_at, cached_report = _health_cache
+        if (now - cached_at) < _HEALTH_CACHE_TTL:
+            return dict(cached_report)
+
     settings = get_settings()
     resolved_path = resolve_credentials_path(settings.firebase_credentials_path)
 
@@ -200,11 +210,13 @@ def check_firebase_health() -> Dict[str, Any]:
             f"Connected successfully to Firestore project '{client.project}'. "
             f"Collections visible: {collection_names if collection_names else 'None (empty database)'}."
         )
+        _health_cache = (now, health_report)
         return health_report
     except FirebaseNotConfiguredError as fnc_err:
         health_report["configured"] = False
         health_report["connected"] = False
         health_report["details"] = str(fnc_err)
+        _health_cache = (now, health_report)
         return health_report
     except Exception as exc:
         health_report["configured"] = True
@@ -215,6 +227,7 @@ def check_firebase_health() -> Dict[str, Any]:
 
 def reset_firebase_state() -> None:
     """Resets cached app and client instances (useful during testing or reconfiguration)."""
-    global _firebase_app, _firestore_client
+    global _firebase_app, _firestore_client, _health_cache
     _firestore_client = None
     _firebase_app = None
+    _health_cache = None

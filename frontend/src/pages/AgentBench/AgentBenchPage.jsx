@@ -28,7 +28,6 @@ import StatusBadge from '../../components/common/StatusBadge';
 import LoadingState from '../../components/common/LoadingState';
 import ErrorBanner from '../../components/common/ErrorBanner';
 import { useWorkspace } from '../../context/WorkspaceContext';
-import { AVAILABLE_MODELS, BENCHMARK_SUITES } from '../../services/mockData';
 import api from '../../services/api';
 
 export const AgentBenchPage = () => {
@@ -41,9 +40,9 @@ export const AgentBenchPage = () => {
   const [error, setError] = useState(null);
 
   // Configuration state
-  const [selectedModel, setSelectedModel] = useState('nexus-agent-v2.1');
-  const [selectedSuite, setSelectedSuite] = useState('suite-tool-use');
-  const [sampleSize, setSampleSize] = useState(100);
+  const [selectedModel, setSelectedModel] = useState('gemini/gemini-1.5-flash');
+  const [selectedSuite, setSelectedSuite] = useState('fever-validation');
+  const [sampleSize, setSampleSize] = useState(50);
   const [concurrency, setConcurrency] = useState(16);
   const [temperature, setTemperature] = useState(0.2);
 
@@ -56,12 +55,21 @@ export const AgentBenchPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [suiteRes, modelRes] = await Promise.all([
         api.getBenchmarkSuites(),
         api.getModels()
       ]);
-      setSuites(suiteRes.data);
-      setModels(modelRes.data);
+      const loadedSuites = suiteRes.data || [];
+      const loadedModels = modelRes.data || [];
+      setSuites(loadedSuites);
+      setModels(loadedModels);
+      if (loadedModels.length > 0 && !loadedModels.some(m => m.id === selectedModel)) {
+        setSelectedModel(loadedModels[0].id);
+      }
+      if (loadedSuites.length > 0 && !loadedSuites.some(s => s.id === selectedSuite)) {
+        setSelectedSuite(loadedSuites[0].id);
+      }
     } catch (err) {
       setError(err.message || 'Failed to load benchmark suites.');
     } finally {
@@ -75,52 +83,36 @@ export const AgentBenchPage = () => {
 
   const handleExecuteBenchmark = async () => {
     setIsRunning(true);
-    setProgress(12);
+    setProgress(25);
     setLastResult(null);
     setTerminalLogs([
-      `[${new Date().toLocaleTimeString()}] [Harness] Initializing isolated benchmark container...`,
-      `[${new Date().toLocaleTimeString()}] [Model] Bound to endpoint "${selectedModel}" via streaming client`,
-      `[${new Date().toLocaleTimeString()}] [Suite] Loaded "${selectedSuite}" with ${sampleSize} vectors (Concurrency: ${concurrency}x)`
+      `[${new Date().toLocaleTimeString()}] [Harness] Dispatching live evaluation to NexusIQ backend...`,
+      `[${new Date().toLocaleTimeString()}] [Model] Target model: "${selectedModel}" (Temp: ${temperature})`,
+      `[${new Date().toLocaleTimeString()}] [Suite] Sampling ${sampleSize} real vectors from "${selectedSuite}"...`
     ]);
 
-    setTimeout(() => {
-      setProgress(40);
+    try {
+      const response = await api.runBenchmark({
+        modelId: selectedModel,
+        suiteId: selectedSuite,
+        sampleSize: Number(sampleSize),
+        temperature: Number(temperature)
+      });
+      setProgress(100);
       setTerminalLogs(prev => [
         ...prev,
-        `[${new Date().toLocaleTimeString()}] [Batch-1] Executing prompts #1-#40: Validating schema compliance & parameter types...`,
-        `[${new Date().toLocaleTimeString()}] [ToolAudit] Tool syntax validation: 100% valid JSON Schema payloads`
+        `[${new Date().toLocaleTimeString()}] [Verify] Mode: ${response.data.evaluationMode}. Accuracy: ${response.data.accuracy}% | Trust: ${response.data.trustScore}% | P95: ${response.data.latencyP95}ms`,
+        `[${new Date().toLocaleTimeString()}] [Trace] Recorded execution trace ${response.data.traceId || 'N/A'}`,
+        `[${new Date().toLocaleTimeString()}] [SUCCESS] Result ${response.data.id} saved (${response.persisted_to_firestore ? 'Firestore' : 'Session'}).`
       ]);
-    }, 450);
-
-    setTimeout(() => {
-      setProgress(75);
-      setTerminalLogs(prev => [
-        ...prev,
-        `[${new Date().toLocaleTimeString()}] [Batch-2] Executing prompts #41-#80: Testing adversarial traps & out-of-domain tools...`,
-        `[${new Date().toLocaleTimeString()}] [Guardrail] Grounding filter caught 0 hallucinated tool signatures`
-      ]);
-    }, 900);
-
-    setTimeout(async () => {
-      try {
-        const response = await api.runBenchmark({
-          modelId: selectedModel,
-          suiteId: selectedSuite,
-          sampleSize: Number(sampleSize)
-        });
-        setProgress(100);
-        setTerminalLogs(prev => [
-          ...prev,
-          `[${new Date().toLocaleTimeString()}] [Verify] Completed all ${sampleSize} vectors. P95 latency: ${response.data.latencyP95}ms. Trust: ${response.data.trustScore}%`,
-          `[${new Date().toLocaleTimeString()}] [SUCCESS] Result logged as ${response.data.id} in enterprise leaderboard.`
-        ]);
-        setLastResult(response.data);
-        setIsRunning(false);
-      } catch (err) {
-        setIsRunning(false);
-        setTerminalLogs(prev => [...prev, `[ERROR] Execution halted: ${err.message}`]);
-      }
-    }, 1450);
+      setLastResult(response.data);
+      loadData();
+    } catch (err) {
+      setTerminalLogs(prev => [...prev, `[ERROR] Execution halted: ${err.message}`]);
+      setError(err.message);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleQuickSuiteLaunch = (suiteId) => {
@@ -410,47 +402,55 @@ export const AgentBenchPage = () => {
         </div>
 
         <Row className="g-3">
-          {suites.map((suite) => (
-            <Col xs={12} md={6} lg={4} key={suite.id}>
-              <div className="nexus-card h-100 hover-lift d-flex flex-column justify-content-between">
-                <div className="nexus-card-body p-4">
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <span className="badge bg-primary bg-opacity-15 text-cyan font-mono small" style={{ color: '#22D3EE' }}>
-                      {suite.category}
-                    </span>
-                    <span className="badge-trust-verified py-0.5 px-2">
-                      <ShieldCheck size={12} /> {suite.passRate}% Pass
-                    </span>
+          {suites.map((suite) => {
+            const isSelected = suite.id === selectedSuite;
+            return (
+              <Col xs={12} md={6} key={suite.id}>
+                <div
+                  className={`nexus-card h-100 hover-lift d-flex flex-column justify-content-between ${
+                    isSelected ? 'border-primary' : ''
+                  }`}
+                  style={isSelected ? { boxShadow: '0 0 24px -4px rgba(59, 130, 246, 0.3)' } : undefined}
+                >
+                  <div className="nexus-card-body p-4">
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <span className="badge bg-primary bg-opacity-15 text-cyan font-mono small" style={{ color: '#22D3EE' }}>
+                        {suite.category}
+                      </span>
+                      <span className="badge-trust-verified py-0.5 px-2">
+                        <ShieldCheck size={12} /> {suite.passRate > 0 ? `${suite.passRate}% Pass` : 'Ready'}
+                      </span>
+                    </div>
+
+                    <h6 className="fw-bold text-white mb-2">{suite.name}</h6>
+                    <p className="text-muted small mb-3" style={{ fontSize: '0.84rem', minHeight: '42px', lineHeight: '1.5' }}>
+                      {suite.description}
+                    </p>
+
+                    <div className="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-15 text-muted small" style={{ fontSize: '0.75rem' }}>
+                      <span className="font-mono text-light">{Number(suite.testCasesCount || 0).toLocaleString()} Vectors</span>
+                      <span>Avg: {suite.avgLatency}</span>
+                      <span className="font-mono text-success fw-semibold">Risk: {suite.riskLevel}</span>
+                    </div>
                   </div>
 
-                  <h6 className="fw-bold text-white mb-2">{suite.name}</h6>
-                  <p className="text-muted small mb-3" style={{ fontSize: '0.84rem', minHeight: '48px', lineHeight: '1.5' }}>
-                    {suite.description}
-                  </p>
-
-                  <div className="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-15 text-muted small" style={{ fontSize: '0.75rem' }}>
-                    <span>{suite.testCasesCount} Test Cases</span>
-                    <span>Avg: {suite.avgLatency}</span>
-                    <span className="font-mono text-success fw-semibold">Risk: {suite.riskLevel}</span>
+                  <div className="nexus-card-footer d-flex justify-content-between align-items-center">
+                    <span className="text-muted small" style={{ fontSize: '0.72rem' }}>
+                      Last run: {suite.lastRunDate}
+                    </span>
+                    <Button
+                      variant={isSelected ? 'primary' : 'outline-primary'}
+                      size="sm"
+                      className="p-1 px-3 small fw-semibold"
+                      onClick={() => handleQuickSuiteLaunch(suite.id)}
+                    >
+                      {isSelected ? 'Selected' : 'Select Suite'}
+                    </Button>
                   </div>
                 </div>
-
-                <div className="nexus-card-footer d-flex justify-content-between align-items-center">
-                  <span className="text-muted small" style={{ fontSize: '0.72rem' }}>
-                    Last run: {suite.lastRunDate}
-                  </span>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="p-1 px-3 small fw-semibold"
-                    onClick={() => handleQuickSuiteLaunch(suite.id)}
-                  >
-                    Select Suite
-                  </Button>
-                </div>
-              </div>
-            </Col>
-          ))}
+              </Col>
+            );
+          })}
         </Row>
       </div>
     </div>

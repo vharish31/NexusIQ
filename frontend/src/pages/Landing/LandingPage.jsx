@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -7,19 +7,53 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
-  Bot,
-  Activity,
-  Layers,
-  Search,
-  CheckCircle2,
+  Database,
+  LayoutDashboard,
+  Globe,
   Cpu,
-  Zap
+  CheckCircle2
 } from 'lucide-react';
 import { useWorkspace, WORKSPACES } from '../../context/WorkspaceContext';
+import api from '../../services/api';
 
 export const LandingPage = () => {
   const navigate = useNavigate();
   const { setActiveWorkspace } = useWorkspace();
+
+  const [telemetry, setTelemetry] = useState({
+    apiOnline: false,
+    firestoreConnected: false,
+    projectId: 'nexusiq-2fe97',
+    trustScore: null,
+    totalEvals: 0,
+    totalDossiers: 0
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.allSettled([
+      api.getHealth(),
+      api.getFirebaseHealth(),
+      api.getPlatformStats()
+    ]).then(([healthRes, fbRes, statsRes]) => {
+      if (!mounted) return;
+      const apiOk = healthRes.status === 'fulfilled' && healthRes.value?.status === 'healthy';
+      const fbConnected = fbRes.status === 'fulfilled' && Boolean(fbRes.value?.connected);
+      const statsData = statsRes.status === 'fulfilled' ? statsRes.value?.data : null;
+
+      setTelemetry({
+        apiOnline: apiOk,
+        firestoreConnected: fbConnected,
+        projectId: fbRes.status === 'fulfilled' ? (fbRes.value?.project_id || 'nexusiq-2fe97') : 'nexusiq-2fe97',
+        trustScore: statsData?.overallTrustScore ?? null,
+        totalEvals: statsData?.totalAgentEvaluations ?? 0,
+        totalDossiers: statsData?.processedMeetings ?? 0
+      });
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSelectAgentBench = () => {
     setActiveWorkspace(WORKSPACES.AGENT_BENCH);
@@ -31,40 +65,40 @@ export const LandingPage = () => {
     navigate('/meeting-intelligence');
   };
 
-  // Framer Motion Animation Variants
+  const handleOpenDashboard = () => {
+    setActiveWorkspace(WORKSPACES.ALL);
+    navigate('/dashboard');
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.18,
-        delayChildren: 0.1
-      }
+      transition: { staggerChildren: 0.14, delayChildren: 0.08 }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 24 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+      transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] }
     }
   };
 
   const cardVariants = {
-    hidden: { opacity: 0, y: 35, scale: 0.98 },
+    hidden: { opacity: 0, y: 28, scale: 0.985 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+      transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] }
     }
   };
 
   return (
     <div className="landing-container">
-      {/* Background Ambient Orbs */}
       <div className="ambient-glow-mesh">
         <div className="ambient-orb ambient-orb-blue" />
         <div className="ambient-orb ambient-orb-purple" />
@@ -76,33 +110,42 @@ export const LandingPage = () => {
           <div
             className="d-flex align-items-center justify-content-center rounded-3 text-white shadow-sm"
             style={{
-              width: '42px',
-              height: '42px',
+              width: '44px',
+              height: '44px',
               background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
-              border: '1px solid rgba(255,255,255,0.2)'
+              border: '1px solid rgba(255,255,255,0.22)'
             }}
           >
             <Sparkles size={22} />
           </div>
           <div>
             <div className="d-flex align-items-center gap-2">
-              <span className="fw-bold fs-5 text-white tracking-tight">NEXUSAI</span>
-              <span className="pulse-green" title="Operational"></span>
+              <span className="fw-bold fs-5 text-white tracking-tight">NEXUSIQ</span>
+              <span className={telemetry.apiOnline ? 'pulse-green' : 'pulse-blue'} title={telemetry.apiOnline ? 'Backend API Connected' : 'Connecting'}></span>
             </div>
             <div className="text-secondary small text-uppercase tracking-wider" style={{ fontSize: '0.68rem', letterSpacing: '0.08em' }}>
-              AI Intelligence & Trust Platform
+              AI Benchmarking & Pre-Meeting Intelligence
             </div>
           </div>
         </div>
 
-        <div className="d-flex align-items-center gap-3">
-          <div className="d-none d-sm-flex badge-trust-verified py-1 px-3">
+        <div className="d-flex align-items-center gap-2.5 flex-wrap">
+          <div className="d-none d-md-flex badge-trust-verified py-1.5 px-3">
             <ShieldCheck size={14} />
-            <span>Dual Trust Nodes Active</span>
+            <span>
+              {telemetry.trustScore !== null && telemetry.trustScore > 0
+                ? `Verified Trust Avg: ${telemetry.trustScore}%`
+                : 'Trust Verification Engine Active'}
+            </span>
           </div>
-          <span className="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 font-mono small">
-            v2.4 Enterprise
-          </span>
+          <button
+            type="button"
+            className="btn-nexus-secondary py-1.5 px-3"
+            onClick={handleOpenDashboard}
+          >
+            <LayoutDashboard size={15} />
+            <span>Overview Dashboard</span>
+          </button>
         </div>
       </header>
 
@@ -114,36 +157,60 @@ export const LandingPage = () => {
           animate="visible"
           className="d-flex flex-column align-items-center"
         >
-          {/* Badge Tag */}
           <motion.div variants={itemVariants} className="hero-tag">
             <Sparkles size={14} className="text-cyan" style={{ color: '#22D3EE' }} />
-            <span>Next-Generation Enterprise AI Architecture</span>
+            <span>Unified Evaluation & Intelligence Platform</span>
           </motion.div>
 
-          {/* Main Headline */}
           <motion.h1 variants={itemVariants} className="hero-headline">
-            One Platform. <span className="hero-headline-gradient">Two Intelligent Agents.</span>
+            Benchmark Agents. <span className="hero-headline-gradient">Master Every Meeting.</span>
           </motion.h1>
 
-          {/* Subtitle */}
-          <motion.p variants={itemVariants} className="hero-subtitle">
-            Evaluate AI performance. Discover business intelligence. Make smarter decisions.
+          <motion.p variants={itemVariants} className="hero-subtitle mb-4">
+            Empirical FEVER & FEVEROUS agent evaluation paired with live Tavily-grounded pre-meeting intelligence and Firebase Firestore observability.
           </motion.p>
 
-          {/* ONLY TWO Prominent Interactive Agent Cards */}
+          {/* Live Platform Telemetry Strip */}
+          <motion.div variants={itemVariants} className="telemetry-strip">
+            <span className="telemetry-pill">
+              <Database size={14} className={telemetry.firestoreConnected ? 'text-success' : 'text-info'} />
+              <span>
+                Firestore:{' '}
+                <strong className="text-white">
+                  {telemetry.firestoreConnected ? `${telemetry.projectId} Connected` : 'Checking...'}
+                </strong>
+              </span>
+            </span>
+
+            <span className="telemetry-pill">
+              <Cpu size={14} style={{ color: '#22D3EE' }} />
+              <span>
+                Datasets: <strong className="text-white font-mono">216,740</strong> Vectors
+              </span>
+            </span>
+
+            <span className="telemetry-pill">
+              <Globe size={14} style={{ color: '#A78BFA' }} />
+              <span>
+                Bifrost Gateway + <strong className="text-white">Tavily Search</strong>
+              </span>
+            </span>
+          </motion.div>
+
+          {/* Two Interactive Workspace Cards */}
           <motion.div variants={itemVariants} className="w-100">
             <div className="agent-cards-grid">
               {/* CARD 1: AGENTBENCH */}
               <motion.div
                 variants={cardVariants}
-                whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                whileHover={{ y: -6, transition: { duration: 0.22 } }}
                 className="agent-card agent-card-agentbench"
                 onClick={handleSelectAgentBench}
               >
                 <div>
                   <div className="d-flex align-items-start justify-content-between">
                     <div className="agent-card-icon-wrap">
-                      <FlaskConical size={32} />
+                      <FlaskConical size={30} />
                     </div>
                     <span className="badge bg-primary bg-opacity-15 text-cyan border border-primary border-opacity-30 font-mono small px-2.5 py-1 rounded-pill" style={{ color: '#22D3EE' }}>
                       Workspace 1
@@ -152,21 +219,32 @@ export const LandingPage = () => {
 
                   <h2 className="agent-card-title">AgentBench</h2>
                   <div className="agent-card-subtitle">AI Agent Evaluation Engine</div>
-                  
-                  <p className="agent-card-description">
-                    Benchmark, compare and discover the best-performing AI agents across rigorous tool-use, multi-hop reasoning, and safety guardrails.
+
+                  <p className="agent-card-description mb-3">
+                    Benchmark models via Bifrost AI Gateway against stratified FEVER & FEVEROUS datasets, track accuracy vs. latency, and inspect step-by-step execution traces.
                   </p>
 
-                  <div className="agent-card-features">
-                    <span className="feature-pill">Model Leaderboard</span>
-                    <span className="feature-pill">Radar Capabilities</span>
-                    <span className="feature-pill">Accuracy vs Latency</span>
-                    <span className="feature-pill">Waterfall Traces</span>
+                  <div className="metric-callout-grid">
+                    <div className="metric-callout">
+                      <div className="text-muted small" style={{ fontSize: '0.72rem' }}>FEVER + FEVEROUS</div>
+                      <div className="fw-bold text-white font-mono">216,740 Claims</div>
+                    </div>
+                    <div className="metric-callout">
+                      <div className="text-muted small" style={{ fontSize: '0.72rem' }}>Logged Evaluations</div>
+                      <div className="fw-bold text-white font-mono">{telemetry.totalEvals} Runs</div>
+                    </div>
+                  </div>
+
+                  <div className="agent-card-features mb-4">
+                    <span className="feature-pill">FEVER & FEVEROUS</span>
+                    <span className="feature-pill">Bifrost Gateway</span>
+                    <span className="feature-pill">Leaderboard & Radar</span>
+                    <span className="feature-pill">Execution Traces</span>
                   </div>
                 </div>
 
-                <button className="agent-card-cta" onClick={handleSelectAgentBench}>
-                  <span>Explore AgentBench</span>
+                <button type="button" className="agent-card-cta" onClick={handleSelectAgentBench}>
+                  <span>Launch AgentBench</span>
                   <ArrowRight size={18} />
                 </button>
               </motion.div>
@@ -174,14 +252,14 @@ export const LandingPage = () => {
               {/* CARD 2: MEETING INTELLIGENCE */}
               <motion.div
                 variants={cardVariants}
-                whileHover={{ y: -8, transition: { duration: 0.25 } }}
+                whileHover={{ y: -6, transition: { duration: 0.22 } }}
                 className="agent-card agent-card-meeting"
                 onClick={handleSelectMeetingIntelligence}
               >
                 <div>
                   <div className="d-flex align-items-start justify-content-between">
                     <div className="agent-card-icon-wrap">
-                      <Brain size={32} />
+                      <Brain size={30} />
                     </div>
                     <span className="badge bg-purple bg-opacity-15 border border-purple border-opacity-30 font-mono small px-2.5 py-1 rounded-pill" style={{ color: '#A78BFA' }}>
                       Workspace 2
@@ -189,22 +267,35 @@ export const LandingPage = () => {
                   </div>
 
                   <h2 className="agent-card-title">Meeting Intelligence</h2>
-                  <div className="agent-card-subtitle">AI Research & Briefing Agent</div>
-                  
-                  <p className="agent-card-description">
-                    Research companies and people, discover recent developments, verify leadership changes, and generate intelligent pre-meeting briefs.
+                  <div className="agent-card-subtitle">Pre-Meeting Research & Briefing Agent</div>
+
+                  <p className="agent-card-description mb-3">
+                    Research target companies and executives using live Tavily web intelligence, validate every assertion with the Trust Engine, and persist verified dossiers to Firestore.
                   </p>
 
-                  <div className="agent-card-features">
-                    <span className="feature-pill">Company Research</span>
-                    <span className="feature-pill">Executive Dossiers</span>
-                    <span className="feature-pill">Verified Claims</span>
-                    <span className="feature-pill">Audio Diarization</span>
+                  <div className="metric-callout-grid">
+                    <div className="metric-callout">
+                      <div className="text-muted small" style={{ fontSize: '0.72rem' }}>Verification Method</div>
+                      <div className="fw-bold text-white d-flex align-items-center gap-1" style={{ fontSize: '0.9rem' }}>
+                        <CheckCircle2 size={14} className="text-success" /> Source Grounded
+                      </div>
+                    </div>
+                    <div className="metric-callout">
+                      <div className="text-muted small" style={{ fontSize: '0.72rem' }}>Saved Briefings</div>
+                      <div className="fw-bold text-white font-mono">{telemetry.totalDossiers} Dossiers</div>
+                    </div>
+                  </div>
+
+                  <div className="agent-card-features mb-4">
+                    <span className="feature-pill">Tavily Web Intel</span>
+                    <span className="feature-pill">Trust Score Audit</span>
+                    <span className="feature-pill">Citation Links</span>
+                    <span className="feature-pill">Action Tracking</span>
                   </div>
                 </div>
 
-                <button className="agent-card-cta" onClick={handleSelectMeetingIntelligence}>
-                  <span>Explore Meeting Intelligence</span>
+                <button type="button" className="agent-card-cta" onClick={handleSelectMeetingIntelligence}>
+                  <span>Open Meeting Intelligence</span>
                   <ArrowRight size={18} />
                 </button>
               </motion.div>
@@ -213,16 +304,17 @@ export const LandingPage = () => {
         </motion.div>
       </main>
 
-      {/* Subtle Footer */}
+      {/* Footer */}
       <footer className="py-3 px-4 border-top border-secondary border-opacity-10 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2 text-muted small" style={{ fontSize: '0.78rem' }}>
         <div>
-          <span className="text-secondary fw-semibold">NexusAI Enterprise Platform</span> — SOC2 Type II & EU AI Act Guardrails
+          <span className="text-secondary fw-semibold">NexusIQ Platform</span> — FastAPI + Firebase Firestore + Bifrost + Tavily
         </div>
         <div className="d-flex align-items-center gap-3">
           <span className="d-flex align-items-center gap-1.5 text-secondary">
-            <span className="pulse-blue"></span> 98.4% Average Trust Score
+            <span className={telemetry.apiOnline ? 'pulse-green' : 'pulse-blue'}></span>
+            {telemetry.apiOnline ? 'Backend API Online' : 'Start backend on :8000'}
           </span>
-          <span className="text-muted font-mono">v2.4.0</span>
+          <span className="text-muted font-mono">v0.1.0</span>
         </div>
       </footer>
     </div>
